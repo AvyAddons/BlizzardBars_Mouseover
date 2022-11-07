@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - Dragonriding overrides for main bar
+- Bar stays visible while a flyout is open
+
 ## [1.0.0] 2022-11-07
 ### Added
 - Initial release :)

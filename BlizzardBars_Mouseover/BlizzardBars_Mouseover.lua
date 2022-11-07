@@ -6,6 +6,9 @@ local addonName, addon = ...
 ---@type table<string, string>
 local L = addon.L
 
+--@debug@
+_G[addonName] = addon
+--@end-debug@
 
 -- Lua API
 -----------------------------------------------------------
@@ -33,6 +36,8 @@ local C_TimerAfter = _G.C_Timer.After
 local QuickKeybindFrame = _G["QuickKeybindFrame"]
 ---@type Frame
 local EditModeManagerFrame = _G["EditModeManagerFrame"]
+---@type Frame
+local SpellFlyout = _G["SpellFlyout"]
 
 -- Constants
 -----------------------------------------------------------
@@ -54,7 +59,6 @@ local db = (function(db) _G[addonName .. "_DB"] = db; return db end)({
 -- Utility Functions
 -----------------------------------------------------------
 -- Add utility functions like time formatting and similar here.
-
 
 --- Fires a callback after `delay` seconds has passed.
 ---@param fn function Void callback
@@ -90,9 +94,31 @@ function addon:CancelAllTimers()
 	end
 end
 
--- Callbacks
+local function indexOf(array, value)
+	for i, v in ipairs(array) do
+		if v == value then
+			return i
+		end
+	end
+	return nil
+end
+
+function addon:GetFlyoutParent()
+	if (SpellFlyout:IsShown()) then
+		local parent = SpellFlyout:GetParent()
+		local parent_name = parent:GetName() or ""
+		if (string_find(parent_name, "([Bb]utton)%d")) then
+			local index = indexOf(self.buttonNames, string_gsub(parent_name, "%d", ""))
+
+			-- we have the bloody thing!
+			if (index) then return self.bar_names[index] end
+		end
+	end
+	return nil
+end
+
+-- Addon API
 -----------------------------------------------------------
--- Add functions called multiple times by your reactive addon code here.
 
 --- Securely hooks into a frame's OnEnter and OnLeave to show/hide.
 ---@param frame Frame Base frame on which to hook
@@ -103,7 +129,9 @@ function addon:SecureHook(frame, alpha_target, bar_name)
 	frame:HookScript("OnEnter", function()
 		-- if we're dragonriding and this is the main bar, bypass the function
 		local mainBarBypass = (self.dragonriding and bar_name == S_MAIN_BAR)
-		if (addon.hook and not mainBarBypass) then
+		-- ad-hoc bypass for random reason
+		local adHocBypass = (self.bypass == bar_name)
+		if (addon.hook and not mainBarBypass and not adHocBypass) then
 			addon:CancelTimer(bar_name)
 			alpha_target:SetAlpha(1)
 		end
@@ -111,45 +139,15 @@ function addon:SecureHook(frame, alpha_target, bar_name)
 	frame:HookScript("OnLeave", function()
 		-- if we're dragonriding and this is the main bar, bypass the function
 		local mainBarBypass = (self.dragonriding and bar_name == S_MAIN_BAR)
-		if (addon.hook and not mainBarBypass) then
+		-- ad-hoc bypass for random reason
+		local adHocBypass = (self.bypass == bar_name)
+		if (addon.hook and not mainBarBypass and not adHocBypass) then
 			addon.timers[bar_name] = addon:Timer(function()
 				alpha_target:SetAlpha(0)
 			end, 1.2)
 		end
 	end)
 end
-
--- Addon API
------------------------------------------------------------
--- Add any extra addon environment methods here.
-addon.hook = true
-addon.timers = {}
-addon.bars = {}
-addon.buttons = {}
-addon.bar_names = {
-	S_MAIN_BAR,
-	"MultiBarBottomLeft",
-	"MultiBarBottomRight",
-	"MultiBarRight",
-	"MultiBarLeft",
-	"MultiBar5",
-	"MultiBar6",
-	"MultiBar7",
-	"PetActionBar",
-	"StanceBar",
-}
-addon.buttonNames = {
-	"ActionButton",
-	"MultiBarBottomLeftButton",
-	"MultiBarBottomRightButton",
-	"MultiBarRightButton",
-	"MultiBarLeftButton",
-	"MultiBar5Button",
-	"MultiBar6Button",
-	"MultiBar7Button",
-	"PetActionButton",
-	"StanceButton",
-}
 
 --- Hook all bars
 function addon:HookBars()
@@ -206,6 +204,63 @@ function addon:Dragonriding()
 		self.bar_names[S_MAIN_BAR]:SetAlpha(0)
 	end
 end
+
+function addon:HandleFlyoutShow()
+	-- this returns nil if the parent isn't one of the bars we're hiding
+	self.bypass = self:GetFlyoutParent()
+	self:CancelTimer(self.bypass)
+	self.bars[self.bypass]:SetAlpha(1)
+end
+
+function addon:HandleFlyoutHide()
+	local prev_bypass = self.bypass
+	if (prev_bypass) then
+		self.bypass = nil
+		addon.timers[prev_bypass] = addon:Timer(function()
+			self.bars[prev_bypass]:SetAlpha(0)
+		end, 1.2)
+	end
+end
+
+-- Addon Tables
+-----------------------------------------------------------
+
+addon.timers = {}
+addon.bars = {}
+addon.buttons = {}
+addon.bar_names = {
+	S_MAIN_BAR,
+	"MultiBarBottomLeft",
+	"MultiBarBottomRight",
+	"MultiBarRight",
+	"MultiBarLeft",
+	"MultiBar5",
+	"MultiBar6",
+	"MultiBar7",
+	"PetActionBar",
+	"StanceBar",
+}
+addon.buttonNames = {
+	"ActionButton",
+	"MultiBarBottomLeftButton",
+	"MultiBarBottomRightButton",
+	"MultiBarRightButton",
+	"MultiBarLeftButton",
+	"MultiBar5Button",
+	"MultiBar6Button",
+	"MultiBar7Button",
+	"PetActionButton",
+	"StanceButton",
+}
+
+-- these are bypasses and control hover callbacks
+--- Global hover bypass
+addon.hook = true
+--- Dragonriding hover bypass
+addon.dragonriding = false
+--- Generic bypass, currently in use for flyouts
+---@type string|nil
+addon.bypass = nil
 
 -- Addon Core
 -----------------------------------------------------------
@@ -269,9 +324,12 @@ function addon:OnEnable()
 	QuickKeybindFrame:HookScript("OnHide", function() addon:HideBars() end)
 
 	-- Same thing for Edit Mode
-	-- https://www.townlong-yak.com/framexml/live/BindingUtil.lua#164
 	EditModeManagerFrame:HookScript("OnShow", function() addon:ShowBars() end)
 	EditModeManagerFrame:HookScript("OnHide", function() addon:HideBars() end)
+
+	-- Flyouts are more complicated, but we wanna show the parent bar while they're open
+	SpellFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow() end)
+	SpellFlyout:HookScript("OnHide", function() addon:HandleFlyoutHide() end)
 
 	-- initialize the mouseover shindigs
 	self:HookBars()
