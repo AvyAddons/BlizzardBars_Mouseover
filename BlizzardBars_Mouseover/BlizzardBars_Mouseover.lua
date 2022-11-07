@@ -99,7 +99,7 @@ end
 ---@param alpha_target Frame Frame whose alpha should change
 ---@param bar_name string Name of the base frame
 function addon:SecureHook(frame, alpha_target, bar_name)
-	-- because of scoping, we can't declaration the bypass here
+	-- because of scoping, we can't declare the bypass here
 	frame:HookScript("OnEnter", function()
 		-- if we're dragonriding and this is the main bar, bypass the function
 		local mainBarBypass = (self.dragonriding and bar_name == S_MAIN_BAR)
@@ -193,6 +193,20 @@ function addon:HideBars()
 	end
 end
 
+--- Show main vehicle bar
+function addon:Dragonriding()
+	if (IsMounted() and HasBonusActionBar()) then
+		-- we're dragonriding
+		self.dragonriding = true
+		-- show main bar
+		self.bars[S_MAIN_BAR]:SetAlpha(1)
+	else
+		-- if not dragonriding, hide everything again
+		self.dragonriding = false
+		self.bar_names[S_MAIN_BAR]:SetAlpha(0)
+	end
+end
+
 -- Addon Core
 -----------------------------------------------------------
 -- Your event handler.
@@ -200,7 +214,9 @@ end
 --- @param event WowEvent The name of the event that fired.
 --- @param ... unknown Any payloads passed by the event handlers.
 function addon:OnEvent(event, ...)
-	if (event == "ACTIONBAR_SHOWGRID") then
+	if (event == "PLAYER_MOUNT_DISPLAY_CHANGED") then
+		self:Dragonriding()
+	elseif (event == "ACTIONBAR_SHOWGRID") then
 		self:ShowBars()
 	elseif (event == "ACTIONBAR_HIDEGRID") then
 		self:HideBars()
@@ -243,6 +259,7 @@ end
 -- This fires when most of the user interface has been loaded
 -- and most data is available to the user.
 function addon:OnEnable()
+	self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 	self:RegisterEvent("ACTIONBAR_SHOWGRID")
 	self:RegisterEvent("ACTIONBAR_HIDEGRID")
 
