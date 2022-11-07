@@ -1,0 +1,19 @@
+## Interface: 100000
+
+## Title: BlizzardBars_Mouseover
+## Notes: YOUR_DESC
+## Author: Avyiel
+## Version: @project-version@
+## X-Date: @project-date-iso@
+
+## DefaultState: Enabled
+## SavedVariables: BlizzardBars_Mouseover_DB
+
+## X-License: MIT
+## X-Category: Interface Enhancements
+
+## X-Curse-Project-ID: 
+## X-Wago-ID: 
+
+Localization.lua
+BlizzardBars_Mouseover.lua
