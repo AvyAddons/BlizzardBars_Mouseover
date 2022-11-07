@@ -4,10 +4,13 @@ All notable changes to this project will be documented in this file. Be aware th
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [1.1.0] 2022-11-07
 ### Added
 - Dragonriding overrides for main bar
 - Bar stays visible while a flyout is open
+
+### Fixed
+- Resolve nil index issue when mounting up
 
 ## [1.0.0] 2022-11-07
 ### Added

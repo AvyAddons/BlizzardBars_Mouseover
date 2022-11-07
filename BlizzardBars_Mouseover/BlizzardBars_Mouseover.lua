@@ -193,6 +193,9 @@ end
 
 --- Show main vehicle bar
 function addon:Dragonriding()
+	-- this shit is DF release only
+	if not self.WoW10 then return end
+
 	if (IsMounted() and HasBonusActionBar()) then
 		-- we're dragonriding
 		self.dragonriding = true
@@ -201,7 +204,7 @@ function addon:Dragonriding()
 	else
 		-- if not dragonriding, hide everything again
 		self.dragonriding = false
-		self.bar_names[S_MAIN_BAR]:SetAlpha(0)
+		self.bars[S_MAIN_BAR]:SetAlpha(0)
 	end
 end
 
@@ -315,6 +318,8 @@ end
 -- and most data is available to the user.
 function addon:OnEnable()
 	self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+
+	-- These get called when we're dragging a spell
 	self:RegisterEvent("ACTIONBAR_SHOWGRID")
 	self:RegisterEvent("ACTIONBAR_HIDEGRID")
 
