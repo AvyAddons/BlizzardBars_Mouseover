@@ -11,6 +11,8 @@ local L = addon.L
 -----------------------------------------------------------
 -- Up-value any lua functions used here.
 local tonumber = tonumber
+local ipairs = ipairs
+local pairs = pairs
 local string_gsub = string.gsub
 local string_find = string.find
 local string_split = string.split
@@ -25,6 +27,16 @@ local GetBuildInfo = _G.GetBuildInfo
 local GetAddOnInfo = _G.GetAddOnInfo
 local GetNumAddOns = _G.GetNumAddOns
 local GetAddOnEnableState = _G.GetAddOnEnableState
+local GetTime = _G.GetTime
+local C_TimerAfter = _G.C_Timer.After
+---@type Frame
+local QuickKeybindFrame = _G["QuickKeybindFrame"]
+---@type Frame
+local EditModeManagerFrame = _G["EditModeManagerFrame"]
+
+-- Constants
+-----------------------------------------------------------
+local S_MAIN_BAR = "MainMenuBar"
 
 -- Your default settings.
 -----------------------------------------------------------
@@ -44,23 +56,155 @@ local db = (function(db) _G[addonName .. "_DB"] = db; return db end)({
 -- Add utility functions like time formatting and similar here.
 
 
+--- Fires a callback after `delay` seconds has passed.
+---@param fn function Void callback
+---@param delay number Delay in seconds
+---@return table timer The timer table
+function addon:Timer(fn, delay)
+	-- C_TimerAfter doesn't allow anything below
+	if delay < 0.01 then delay = 0.01 end
+
+	local timer = {
+		delay = delay,
+		fn = fn,
+		ends = GetTime() + delay,
+		cancelled = false,
+	}
+
+	timer.callback = function()
+		if not timer.cancelled then timer.fn() end
+	end
+
+	C_TimerAfter(delay, timer.callback)
+	return timer
+end
+
+function addon:CancelTimer(barKey)
+	local timer = self.timers[barKey]
+	if timer then timer.cancelled = true end
+end
+
+function addon:CancelAllTimers()
+	for _, timer in pairs(self.timers) do
+		timer.cancelled = true
+	end
+end
+
 -- Callbacks
 -----------------------------------------------------------
 -- Add functions called multiple times by your reactive addon code here.
 
+--- Securely hooks into a frame's OnEnter and OnLeave to show/hide.
+---@param frame Frame Base frame on which to hook
+---@param alpha_target Frame Frame whose alpha should change
+---@param bar_name string Name of the base frame
+function addon:SecureHook(frame, alpha_target, bar_name)
+	-- because of scoping, we can't declaration the bypass here
+	frame:HookScript("OnEnter", function()
+		-- if we're dragonriding and this is the main bar, bypass the function
+		local mainBarBypass = (self.dragonriding and bar_name == S_MAIN_BAR)
+		if (addon.hook and not mainBarBypass) then
+			addon:CancelTimer(bar_name)
+			alpha_target:SetAlpha(1)
+		end
+	end)
+	frame:HookScript("OnLeave", function()
+		-- if we're dragonriding and this is the main bar, bypass the function
+		local mainBarBypass = (self.dragonriding and bar_name == S_MAIN_BAR)
+		if (addon.hook and not mainBarBypass) then
+			addon.timers[bar_name] = addon:Timer(function()
+				alpha_target:SetAlpha(0)
+			end, 1.2)
+		end
+	end)
+end
 
 -- Addon API
 -----------------------------------------------------------
 -- Add any extra addon environment methods here.
+addon.hook = true
+addon.timers = {}
+addon.bars = {}
+addon.buttons = {}
+addon.bar_names = {
+	S_MAIN_BAR,
+	"MultiBarBottomLeft",
+	"MultiBarBottomRight",
+	"MultiBarRight",
+	"MultiBarLeft",
+	"MultiBar5",
+	"MultiBar6",
+	"MultiBar7",
+	"PetActionBar",
+	"StanceBar",
+}
+addon.buttonNames = {
+	"ActionButton",
+	"MultiBarBottomLeftButton",
+	"MultiBarBottomRightButton",
+	"MultiBarRightButton",
+	"MultiBarLeftButton",
+	"MultiBar5Button",
+	"MultiBar6Button",
+	"MultiBar7Button",
+	"PetActionButton",
+	"StanceButton",
+}
 
+--- Hook all bars
+function addon:HookBars()
+	self:ResumeCallbacks()
+	-- these secure hooks are automatically de-hook on reload/relog, we can ignore OnDisable
+	for key, bar in pairs(self.bars) do
+		-- hide them all
+		bar:SetAlpha(0)
+		-- hook into mouseover for bar and buttons
+		self:SecureHook(bar, bar, key)
+		for _, button in pairs(self.buttons[key]) do
+			self:SecureHook(button, bar, key)
+		end
+	end
+end
+
+--- Resumes callbacks
+function addon:ResumeCallbacks()
+	self.hook = true
+end
+
+--- Pauses callbacks without actually unhooking them
+function addon:PauseCallbacks()
+	self.hook = false
+end
+
+--- Show all bars
+function addon:ShowBars()
+	self:CancelAllTimers()
+	self:PauseCallbacks()
+	for _, bar in pairs(self.bars) do
+		bar:SetAlpha(1)
+	end
+end
+
+--- Hide all bars
+function addon:HideBars()
+	self:ResumeCallbacks()
+	for _, bar in pairs(self.bars) do
+		bar:SetAlpha(0)
+	end
+end
 
 -- Addon Core
 -----------------------------------------------------------
 -- Your event handler.
 -- Any events you add should be handled here.
---- @param event string The name of the event that fired.
+--- @param event WowEvent The name of the event that fired.
 --- @param ... unknown Any payloads passed by the event handlers.
 function addon:OnEvent(event, ...)
+	if (event == "ACTIONBAR_SHOWGRID") then
+		self:ShowBars()
+	elseif (event == "ACTIONBAR_HIDEGRID") then
+		self:HideBars()
+	end
 end
 
 -- Your chat command handler.
@@ -73,16 +217,47 @@ end
 -- Initialization.
 -- This fires when the addon and its settings are loaded.
 function addon:OnInit()
-	-- Do any parsing of saved settings here.
-	-- This is also a good place to create your frames and objects,
-	-- as well as register chat commands.
+	-- we can access Actions Bars via _G[bar]
+	-- populate bar references
+	for _, barName in ipairs(self.bar_names) do
+		self.bars[barName] = _G[barName]
+	end
+	-- populate button references
+	for i, buttonName in ipairs(self.buttonNames) do
+		self.buttons[self.bar_names[i]] = {}
+		if (i <= 8) then
+			-- multi action bars 1 through 8 have 12 buttons
+			for j = 1, 12 do
+				self.buttons[self.bar_names[i]][j] = _G[buttonName .. j]
+			end
+		else
+			-- pet and stance bar only have 10
+			for j = 1, 10 do
+				self.buttons[self.bar_names[i]][j] = _G[buttonName .. j]
+			end
+		end
+	end
 end
 
 -- Enabling.
 -- This fires when most of the user interface has been loaded
 -- and most data is available to the user.
 function addon:OnEnable()
-	-- Register your events here.
+	self:RegisterEvent("ACTIONBAR_SHOWGRID")
+	self:RegisterEvent("ACTIONBAR_HIDEGRID")
+
+	-- in Quick Keybind mode, we wanna show bars
+	-- https://www.townlong-yak.com/framexml/live/BindingUtil.lua#164
+	QuickKeybindFrame:HookScript("OnShow", function() addon:ShowBars() end)
+	QuickKeybindFrame:HookScript("OnHide", function() addon:HideBars() end)
+
+	-- Same thing for Edit Mode
+	-- https://www.townlong-yak.com/framexml/live/BindingUtil.lua#164
+	EditModeManagerFrame:HookScript("OnShow", function() addon:ShowBars() end)
+	EditModeManagerFrame:HookScript("OnHide", function() addon:HideBars() end)
+
+	-- initialize the mouseover shindigs
+	self:HookBars()
 end
 
 -- Setup the environment
@@ -219,9 +394,11 @@ end
 	-- Proxy event registering to the addon namespace.
 	-- The 'self' within these should refer to our proxy frame,
 	-- which has been passed to this environment method as the 'self'.
-	addon.RegisterEvent = function(_, ...) addon.eventFrame:RegisterEvent(...) end
+	---@param event WowEvent
+	addon.RegisterEvent = function(_, event) addon.eventFrame:RegisterEvent(event) end
 	addon.RegisterUnitEvent = function(_, ...) addon.eventFrame:RegisterUnitEvent(...) end
-	addon.UnregisterEvent = function(_, ...) addon.eventFrame:UnregisterEvent(...) end
+	---@param event WowEvent
+	addon.UnregisterEvent = function(_, event) addon.eventFrame:UnregisterEvent(event) end
 	addon.UnregisterAllEvents = function(_, ...) addon.eventFrame:UnregisterAllEvents(...) end
 	addon.IsEventRegistered = function(_, ...) addon.eventFrame:IsEventRegistered(...) end
 
