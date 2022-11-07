@@ -1,7 +1,7 @@
 ## Interface: 100000
 
 ## Title: BlizzardBars_Mouseover
-## Notes: YOUR_DESC
+## Notes: Hides the default Blizzard bars, shows them on mouseover.
 ## Author: Avyiel
 ## Version: @project-version@
 ## X-Date: @project-date-iso@
@@ -10,10 +10,10 @@
 ## SavedVariables: BlizzardBars_Mouseover_DB
 
 ## X-License: MIT
-## X-Category: Interface Enhancements
+## X-Category: Action Bars
 
-## X-Curse-Project-ID: 
-## X-Wago-ID: 
+## X-Curse-Project-ID: 699633
+## X-Wago-ID: VBNB7L6x
 
 Localization.lua
 BlizzardBars_Mouseover.lua
