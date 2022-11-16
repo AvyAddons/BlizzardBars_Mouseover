@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. Be aware th
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.0] 2022-11-16
+### Added
+- The cooldown bling is now hidden
+- Added command to toggle mouseover: `/togglemo`
+- Bumped TOC to 100002
+
 ## [1.1.0] 2022-11-07
 ### Added
 - Dragonriding overrides for main bar

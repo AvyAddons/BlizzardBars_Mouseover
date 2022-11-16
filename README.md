@@ -11,6 +11,9 @@ Bars become and stay visible under the following conditions:
 - Quick Keybind Mode
 - Bar has Spell Flyout open (e.g. Pet Utility or Summon Demon)
 
+## Chat Commands
+- `/togglemo`: Make bars visible temporarily
+
 ## Support & Connect
 - GitHub: [https://github.com/AvyAddons](AvyAddons)
 - Twitter: [https://twitter.com/Avyiel7](@Avyiel7)
