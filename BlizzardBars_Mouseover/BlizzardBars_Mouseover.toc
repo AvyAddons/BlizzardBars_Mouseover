@@ -1,4 +1,4 @@
-## Interface: 100000
+## Interface: 100002
 
 ## Title: BlizzardBars_Mouseover
 ## Notes: Hides the default Blizzard bars, shows them on mouseover.
@@ -17,3 +17,7 @@
 
 Localization.lua
 BlizzardBars_Mouseover.lua
+
+#@debug@
+## Version: DEV
+#@end-debug@

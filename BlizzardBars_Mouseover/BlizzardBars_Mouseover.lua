@@ -153,14 +153,33 @@ end
 function addon:HookBars()
 	self:ResumeCallbacks()
 	-- these secure hooks are automatically de-hook on reload/relog, we can ignore OnDisable
-	for key, bar in pairs(self.bars) do
+	for bar_name, bar in pairs(self.bars) do
 		-- hide them all
 		bar:SetAlpha(0)
 		-- hook into mouseover for bar and buttons
-		self:SecureHook(bar, bar, key)
-		for _, button in pairs(self.buttons[key]) do
-			self:SecureHook(button, bar, key)
+		self:SecureHook(bar, bar, bar_name)
+		for _, button in pairs(self.buttons[bar_name]) do
+			self:SecureHook(button, bar, bar_name)
+			self:SetBling(button.cooldown, false)
 		end
+	end
+end
+
+---Sets the bling flag on a cooldown
+---@param cooldown Cooldown
+---@param flag boolean
+function addon:SetBling(cooldown, flag)
+	if not cooldown then return end
+	cooldown:SetDrawBling(flag)
+end
+
+---Sets the bling for each button in a bar
+---@param bar_name string
+---@param render boolean
+function addon:SetBlingRender(bar_name, render)
+	if not self.buttons[bar_name] then return end
+	for _, button in ipairs(self.buttons[bar_name]) do
+		self:SetBling(button.cooldown, render)
 	end
 end
 
@@ -178,16 +197,31 @@ end
 function addon:ShowBars()
 	self:CancelAllTimers()
 	self:PauseCallbacks()
-	for _, bar in pairs(self.bars) do
+	for bar_name, bar in pairs(self.bars) do
 		bar:SetAlpha(1)
+		self:SetBlingRender(bar_name, true)
 	end
 end
 
 --- Hide all bars
 function addon:HideBars()
 	self:ResumeCallbacks()
-	for _, bar in pairs(self.bars) do
+	for bar_name, bar in pairs(self.bars) do
 		bar:SetAlpha(0)
+		self:SetBlingRender(bar_name, false)
+	end
+end
+
+--- Toggle bar visibility and (un)register grid events
+function addon:ToggleBars()
+	if addon.hook then
+		self:ShowBars()
+		self:UnregisterEvent("ACTIONBAR_SHOWGRID")
+		self:UnregisterEvent("ACTIONBAR_HIDEGRID")
+	else
+		self:HideBars()
+		self:RegisterEvent("ACTIONBAR_SHOWGRID")
+		self:RegisterEvent("ACTIONBAR_HIDEGRID")
 	end
 end
 
@@ -311,6 +345,8 @@ function addon:OnInit()
 			end
 		end
 	end
+
+	self:RegisterChatCommand('togglemo', self.ToggleBars)
 end
 
 -- Enabling.
