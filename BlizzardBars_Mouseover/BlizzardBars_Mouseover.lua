@@ -422,8 +422,9 @@ function addon:OnEnable()
 	QuickKeybindFrame:HookScript("OnHide", function() addon:HideBars() end)
 
 	-- Same thing for Edit Mode
-	EditModeManagerFrame:HookScript("OnShow", function() addon:ShowBars() end)
-	EditModeManagerFrame:HookScript("OnHide", function() addon:HideBars() end)
+	-- These cause a small hicup if we call it instantly. So a tiny delay fixes that
+	EditModeManagerFrame:HookScript("OnShow", function() C_TimerAfter(0.05, function() addon:ShowBars() end) end)
+	EditModeManagerFrame:HookScript("OnHide", function() C_TimerAfter(0.05, function() addon:HideBars() end) end)
 
 	-- Flyouts are more complicated, but we wanna show the parent bar while they're open
 	SpellFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow() end)
