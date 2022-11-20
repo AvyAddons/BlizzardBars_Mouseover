@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file. Be aware th
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.3.0] 2022-11-19
+## [Unreleased] 2022-11-19
+### Added
+- New command to toggle edit mode: `/em`
+
+## [1.3.0] 2022-11-20
 ### Added
 - New command to show or hide the pet bar: `/bbm pet`
 - New command to toggle mouseover: `/bbm toggle`
