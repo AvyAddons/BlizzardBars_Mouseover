@@ -367,6 +367,15 @@ function addon:OnChatCommand(editBox, command, ...)
 			flag = false
 		end
 		self:PetBarHandler(flag)
+	elseif (command == "em") then
+		if EditModeManagerFrame:IsShown() then
+			if (EditModeManagerFrame.SaveChangesButton:IsEnabled()) then
+				EditModeManagerFrame.SaveChangesButton:Click()
+			end
+			EditModeManagerFrame:Hide()
+		else
+			EditModeManagerFrame:Show()
+		end
 	end
 end
 
@@ -404,6 +413,7 @@ function addon:OnInit()
 	table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
 
 	self:RegisterChatCommand('bbm')
+	self:RegisterChatCommand('em')
 end
 
 -- Enabling.
