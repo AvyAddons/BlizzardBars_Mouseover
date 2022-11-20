@@ -3,16 +3,21 @@
 
 Does what the title says. *Taintless, fast, and small!*
 
-There are no configurations, no per-bar setting. All or nothing, for now.
+Currently, you can decide whether to show the pet bar or not. Everything else is
+always mouseover.
 
 Bars become and stay visible under the following conditions:
 - Mouseover
 - Edit Mode
 - Quick Keybind Mode
+- Dragonriding
 - Bar has Spell Flyout open (e.g. Pet Utility or Summon Demon)
 
 ## Chat Commands
-- `/togglemo`: Make bars visible temporarily
+- `/bbm pet [on|off]`: Toggle pet bar mouseover. No argument will toggle the bar.
+- `/bbm toggle`: Make all bars visible temporarily (until /reload or the next toggle)
+
+> No I do not want to add a settings panel. 
 
 ## Support & Connect
 - GitHub: [https://github.com/AvyAddons](AvyAddons)

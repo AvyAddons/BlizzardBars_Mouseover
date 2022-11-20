@@ -41,7 +41,9 @@ local SpellFlyout = _G["SpellFlyout"]
 
 -- Constants
 -----------------------------------------------------------
-local S_MAIN_BAR = "MainMenuBar"
+local MAIN_BAR = "MainMenuBar"
+local PET_BAR = "PetActionBar"
+local PET_ACTION_BUTTON = "PetActionButton"
 
 -- Your default settings.
 -----------------------------------------------------------
@@ -51,8 +53,9 @@ local S_MAIN_BAR = "MainMenuBar"
 -- * You should access saved settings by using `db[key]`
 -- * Don't put frame handles or other widget references in here,
 --   just strings, numbers, and booleans. Tables also work.
-local db = (function(db) _G[addonName .. "_DB"] = db; return db end)({
+addon.db = (function(db) _G[addonName .. "_DB"] = db; return db end)({
 	-- Put your default settings here
+	["pet_bar_ignore"] = false,
 })
 
 
@@ -83,8 +86,10 @@ function addon:Timer(fn, delay)
 	return timer
 end
 
-function addon:CancelTimer(barKey)
-	local timer = self.timers[barKey]
+---Cancel a timer by the bar name
+---@param bar_name string
+function addon:CancelTimer(bar_name)
+	local timer = self.timers[bar_name]
 	if timer then timer.cancelled = true end
 end
 
@@ -108,9 +113,7 @@ function addon:GetFlyoutParent()
 		local parent = SpellFlyout:GetParent()
 		local parent_name = parent:GetName() or ""
 		if (string_find(parent_name, "([Bb]utton)%d")) then
-			local index = indexOf(self.buttonNames, string_gsub(parent_name, "%d", ""))
-
-			-- we have the bloody thing!
+			local index = indexOf(self.button_names, string_gsub(parent_name, "%d", ""))
 			if (index) then return self.bar_names[index] end
 		end
 	end
@@ -125,23 +128,24 @@ end
 ---@param alpha_target Frame Frame whose alpha should change
 ---@param bar_name string Name of the base frame
 function addon:SecureHook(frame, alpha_target, bar_name)
-	-- because of scoping, we can't declare the bypass here
-	frame:HookScript("OnEnter", function()
+	-- because references need to be resolved on runtime, we can't declare the bypasses here
+	-- instead we can use a function or copypaste stuff inside the callbacks
+	local function CheckBypass()
 		-- if we're dragonriding and this is the main bar, bypass the function
-		local mainBarBypass = (self.dragonriding and bar_name == S_MAIN_BAR)
-		-- ad-hoc bypass for random reason
+		local dragonridingBypass = (self.dragonriding and bar_name == MAIN_BAR)
+		-- ad-hoc bypass of any given bar
 		local adHocBypass = (self.bypass == bar_name)
-		if (addon.hook and not mainBarBypass and not adHocBypass) then
+		return not (dragonridingBypass or adHocBypass)
+	end
+
+	frame:HookScript("OnEnter", function()
+		if (addon.enabled and CheckBypass()) then
 			addon:CancelTimer(bar_name)
 			alpha_target:SetAlpha(1)
 		end
 	end)
 	frame:HookScript("OnLeave", function()
-		-- if we're dragonriding and this is the main bar, bypass the function
-		local mainBarBypass = (self.dragonriding and bar_name == S_MAIN_BAR)
-		-- ad-hoc bypass for random reason
-		local adHocBypass = (self.bypass == bar_name)
-		if (addon.hook and not mainBarBypass and not adHocBypass) then
+		if (addon.enabled and CheckBypass()) then
 			addon.timers[bar_name] = addon:Timer(function()
 				alpha_target:SetAlpha(0)
 			end, 1.2)
@@ -149,19 +153,26 @@ function addon:SecureHook(frame, alpha_target, bar_name)
 	end)
 end
 
+---Securely hook a bar and its buttons
+---@param bar Frame
+---@param bar_name string
+function addon:HookBar(bar, bar_name)
+	bar:SetAlpha(0)
+	-- this only hooks the bar frame, buttons are ignored here
+	self:SecureHook(bar, bar, bar_name)
+	-- so we have to hook buttons individually
+	for _, button in pairs(self.buttons[bar_name]) do
+		self:SecureHook(button, bar, bar_name)
+		self:SetBling(button.cooldown, false)
+	end
+end
+
 --- Hook all bars
 function addon:HookBars()
 	self:ResumeCallbacks()
 	-- these secure hooks are automatically de-hook on reload/relog, we can ignore OnDisable
 	for bar_name, bar in pairs(self.bars) do
-		-- hide them all
-		bar:SetAlpha(0)
-		-- hook into mouseover for bar and buttons
-		self:SecureHook(bar, bar, bar_name)
-		for _, button in pairs(self.buttons[bar_name]) do
-			self:SecureHook(button, bar, bar_name)
-			self:SetBling(button.cooldown, false)
-		end
+		self:HookBar(bar, bar_name)
 	end
 end
 
@@ -175,22 +186,22 @@ end
 
 ---Sets the bling for each button in a bar
 ---@param bar_name string
----@param render boolean
-function addon:SetBlingRender(bar_name, render)
+---@param flag boolean
+function addon:SetBlingRender(bar_name, flag)
 	if not self.buttons[bar_name] then return end
 	for _, button in ipairs(self.buttons[bar_name]) do
-		self:SetBling(button.cooldown, render)
+		self:SetBling(button.cooldown, flag)
 	end
 end
 
 --- Resumes callbacks
 function addon:ResumeCallbacks()
-	self.hook = true
+	self.enabled = true
 end
 
 --- Pauses callbacks without actually unhooking them
 function addon:PauseCallbacks()
-	self.hook = false
+	self.enabled = false
 end
 
 --- Show all bars
@@ -214,35 +225,35 @@ end
 
 --- Toggle bar visibility and (un)register grid events
 function addon:ToggleBars()
-	if addon.hook then
+	if addon.enabled then
 		self:ShowBars()
-		self:UnregisterEvent("ACTIONBAR_SHOWGRID")
-		self:UnregisterEvent("ACTIONBAR_HIDEGRID")
+		self:UnregisterAllEvents()
 	else
 		self:HideBars()
 		self:RegisterEvent("ACTIONBAR_SHOWGRID")
 		self:RegisterEvent("ACTIONBAR_HIDEGRID")
+		self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 	end
 end
 
 --- Show main vehicle bar
 function addon:Dragonriding()
-	-- this shit is DF release only
-	if not self.WoW10 then return end
-
+	if (not self.enabled) then return end
 	if (IsMounted() and HasBonusActionBar()) then
 		-- we're dragonriding
 		self.dragonriding = true
 		-- show main bar
-		self.bars[S_MAIN_BAR]:SetAlpha(1)
-	else
-		-- if not dragonriding, hide everything again
+		self.bars[MAIN_BAR]:SetAlpha(1)
+	elseif (not IsMounted() and self.dragonriding) then
+		-- if we were dragonriding and stopped, hide everything again
 		self.dragonriding = false
-		self.bars[S_MAIN_BAR]:SetAlpha(0)
+		self.bars[MAIN_BAR]:SetAlpha(0)
 	end
 end
 
 function addon:HandleFlyoutShow()
+	-- ignore when bypass enabled
+	if (not self.enabled) then return end
 	-- this returns nil if the parent isn't one of the bars we're hiding
 	self.bypass = self:GetFlyoutParent()
 	self:CancelTimer(self.bypass)
@@ -250,12 +261,39 @@ function addon:HandleFlyoutShow()
 end
 
 function addon:HandleFlyoutHide()
+	-- ignore when bypass enabled
+	if (not self.enabled) then return end
 	local prev_bypass = self.bypass
 	if (prev_bypass) then
 		self.bypass = nil
 		addon.timers[prev_bypass] = addon:Timer(function()
 			self.bars[prev_bypass]:SetAlpha(0)
 		end, 1.2)
+	end
+end
+
+---Handles the pet bar chat command
+---@param flag boolean|string
+function addon:PetBarHandler(flag)
+	if (type(flag) == string) then
+		self.db["pet_bar_ignore"] = not self.db["pet_bar_ignore"]
+	else
+		self.db["pet_bar_ignore"] = flag
+	end
+	if (self.db["pet_bar_ignore"]) then
+		self:Print("Pet bar mouseover disabled.\nDisabling mouseover requires a /reload before you can see changes!")
+	else
+		self:Print("Pet bar mouseover enabled.")
+		-- prevent multiple toggles from stacking hooks
+		if (not self.bars[PET_BAR]) then
+			self.bars[PET_BAR] = _G[PET_BAR]
+			self.buttons[PET_BAR] = {}
+			for i = 1, 10 do
+				self.buttons[PET_BAR][i] = _G[PET_ACTION_BUTTON .. i]
+			end
+			-- handles adding the callbacks, setting alpha, and disabling cooldown bling
+			self:HookBar(_G[PET_BAR], PET_BAR)
+		end
 	end
 end
 
@@ -266,7 +304,7 @@ addon.timers = {}
 addon.bars = {}
 addon.buttons = {}
 addon.bar_names = {
-	S_MAIN_BAR,
+	MAIN_BAR,
 	"MultiBarBottomLeft",
 	"MultiBarBottomRight",
 	"MultiBarRight",
@@ -274,10 +312,9 @@ addon.bar_names = {
 	"MultiBar5",
 	"MultiBar6",
 	"MultiBar7",
-	"PetActionBar",
 	"StanceBar",
 }
-addon.buttonNames = {
+addon.button_names = {
 	"ActionButton",
 	"MultiBarBottomLeftButton",
 	"MultiBarBottomRightButton",
@@ -286,13 +323,12 @@ addon.buttonNames = {
 	"MultiBar5Button",
 	"MultiBar6Button",
 	"MultiBar7Button",
-	"PetActionButton",
 	"StanceButton",
 }
 
 -- these are bypasses and control hover callbacks
 --- Global hover bypass
-addon.hook = true
+addon.enabled = true
 --- Dragonriding hover bypass
 addon.dragonriding = false
 --- Generic bypass, currently in use for flyouts
@@ -320,33 +356,54 @@ end
 ---@param command string The name of the slash command type in.
 ---@param ... string Any additional arguments passed to your command, all as strings.
 function addon:OnChatCommand(editBox, command, ...)
+	local arg1, arg2 = ...
+	if (arg1 == "toggle") then
+		self:ToggleBars()
+	elseif (arg1 == "pet") then
+		local flag = "toggle"
+		if (arg2 and (arg2 == "enabled" or arg2 == "on" or arg2 == 1)) then
+			flag = true
+		elseif (arg2 and (arg2 == "disabled" or arg2 == "off" or arg2 == 0)) then
+			flag = false
+		end
+		self:PetBarHandler(flag)
+	end
 end
 
 -- Initialization.
 -- This fires when the addon and its settings are loaded.
 function addon:OnInit()
+	-- unless ignored, we want them in the list
+	if (not self.db["pet_bar_ignore"]) then
+		table.insert(self.bar_names, PET_BAR)
+		table.insert(self.button_names, PET_ACTION_BUTTON)
+	end
+
 	-- we can access Actions Bars via _G[bar]
 	-- populate bar references
 	for _, barName in ipairs(self.bar_names) do
 		self.bars[barName] = _G[barName]
 	end
 	-- populate button references
-	for i, buttonName in ipairs(self.buttonNames) do
+	for i, button_name in ipairs(self.button_names) do
 		self.buttons[self.bar_names[i]] = {}
 		if (i <= 8) then
 			-- multi action bars 1 through 8 have 12 buttons
 			for j = 1, 12 do
-				self.buttons[self.bar_names[i]][j] = _G[buttonName .. j]
+				self.buttons[self.bar_names[i]][j] = _G[button_name .. j]
 			end
 		else
 			-- pet and stance bar only have 10
 			for j = 1, 10 do
-				self.buttons[self.bar_names[i]][j] = _G[buttonName .. j]
+				self.buttons[self.bar_names[i]][j] = _G[button_name .. j]
 			end
 		end
 	end
+	-- this needs a manual insert, since otherwise this button is never visible
+	-- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
+	table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
 
-	self:RegisterChatCommand('togglemo', self.ToggleBars)
+	self:RegisterChatCommand('bbm')
 end
 
 -- Enabling.
@@ -534,6 +591,8 @@ end
 				-- Note that you are free to re-register it in any of the
 				-- addon namespace methods.
 				addon.eventFrame:UnregisterEvent("ADDON_LOADED")
+				-- Initialize our saved variables, or use defaults if empty
+				addon.db = _G[addonName .. "_DB"] or addon.db
 				-- Call the initialization method.
 				if (addon.OnInit) then
 					addon:OnInit()
