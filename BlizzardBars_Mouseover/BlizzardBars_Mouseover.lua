@@ -78,8 +78,9 @@ end
 --- Fires a callback after `delay` seconds has passed.
 ---@param fn function Void callback
 ---@param delay number Delay in seconds
+---@param every number repeat Every in seconds
 ---@return table timer The timer table
-function addon:Timer(fn, delay)
+function addon:Timer(fn, delay, every)
     -- C_TimerAfter doesn't allow anything below
     if delay < 0.01 then
         delay = 0.01
@@ -95,13 +96,15 @@ function addon:Timer(fn, delay)
     timer.callback = function()
         if not timer.cancelled then
             timer.fn()
+            if every ~= nil then
+                C_TimerAfter(every, timer.callback)
+            end
         end
     end
 
     C_TimerAfter(delay, timer.callback)
     return timer
 end
-
 ---Cancel a timer by the bar name
 ---@param bar_name string
 function addon:CancelTimer(bar_name)
@@ -148,6 +151,13 @@ end
 ---@param alpha_target Frame Frame whose alpha should change
 ---@param bar_name string Name of the base frame
 function addon:SecureHook(frame, alpha_target, bar_name)
+    -- print("VALUE FOR BAR: " .. bar_name)
+    -- print(addon.optionValues[""])
+    -- if not addon.optionValues[bar_name] then
+    --     print("EARLY EXIT BAR: " .. bar_name)
+    --     return
+    -- end
+
     -- because references need to be resolved on runtime, we can't declare the bypasses here
     -- instead we can use a function or copypaste stuff inside the callbacks
     local function CheckBypass()
@@ -160,23 +170,74 @@ function addon:SecureHook(frame, alpha_target, bar_name)
 
     frame:HookScript("OnEnter", function()
         if (addon.enabled and CheckBypass()) then
+            -- print("ENTER CONTROL " .. bar_name)
             addon:CancelTimer(bar_name)
-            alpha_target:SetAlpha(1)
+            addon.timers[bar_name] = addon:FadeInBarTimer(alpha_target, bar_name)
         end
     end)
+
     frame:HookScript("OnLeave", function()
         if (addon.enabled and CheckBypass()) then
-            addon.timers[bar_name] = addon:Timer(function()
-                alpha_target:SetAlpha(0)
-            end, self.hideAfter)
+            -- print("LEAVE CONTROL " .. bar_name)
+            addon:CancelTimer(bar_name)
+            addon.timers[bar_name] = addon:FadeOutBarTimer(alpha_target, bar_name)
         end
     end)
+end
+
+function addon:FadeInBarTimer(alpha_target, bar_name)
+    local alpha = addon.fades[bar_name]
+    if alpha == nil then
+        alpha = addon.optionValues["AlphaMin"] or 0
+        addon.fades[bar_name] = alpha
+    end
+    local timer = addon:Timer(function()
+        alpha = alpha + 0.1
+        if alpha >= 1 then
+            addon:CancelTimer(bar_name)
+            alpha = 1
+        end
+        addon.fades[bar_name] = alpha
+        alpha_target:SetAlpha(alpha)
+    end, addon.optionValues["FadeInDelay"] or 0, 1)
+    return timer
+end
+
+function addon:FadeOutBarTimer(alpha_target, bar_name)
+    local alpha = addon.fades[bar_name]
+    if alpha == nil then
+        alpha = addon.optionValues["AlphaMax"] or 0
+        addon.fades[bar_name] = alpha
+    end
+    local timer = addon:Timer(function()
+        alpha = alpha - 0.1
+        if alpha <= 0 then
+            addon:CancelTimer(bar_name)
+            alpha = 0
+        end
+        addon.fades[bar_name] = alpha
+        alpha_target:SetAlpha(alpha)
+    end, addon.optionValues["FadeOutDelay"] or 0, 1)
+    return timer
+end
+
+function addon:PrintTable(table)
+    for k, v in pairs(table) do
+        print(k)
+        print(v)
+    end
 end
 
 ---Securely hook a bar and its buttons
 ---@param bar Frame
 ---@param bar_name string
 function addon:HookBar(bar, bar_name)
+    print(">>> BAR")
+    print(bar[1])
+    -- addon:PrintTable(bar)
+    -- print(bar)
+    -- print(bar_name)
+    -- print("BAR_NAME " .. bar_name)
     bar:SetAlpha(0)
     -- this only hooks the bar frame, buttons are ignored here
     self:SecureHook(bar, bar, bar_name)
@@ -329,8 +390,8 @@ end
 
 -- Addon Tables
 -----------------------------------------------------------
-addon.hideAfter = 0.2
 addon.timers = {}
+addon.fades = {}
 addon.bars = {}
 addon.buttons = {}
 addon.bar_names = {MAIN_BAR, "MultiBarBottomLeft", "MultiBarBottomRight", "MultiBarRight", "MultiBarLeft", "MultiBar5",
