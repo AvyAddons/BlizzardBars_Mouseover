@@ -151,13 +151,6 @@ end
 ---@param alpha_target Frame Frame whose alpha should change
 ---@param bar_name string Name of the base frame
 function addon:SecureHook(frame, alpha_target, bar_name)
-    -- print("VALUE FOR BAR: " .. bar_name)
-    -- print(addon.optionValues[""])
-    -- if not addon.optionValues[bar_name] then
-    --     print("EARLY EXIT BAR: " .. bar_name)
-    --     return
-    -- end
-
     -- because references need to be resolved on runtime, we can't declare the bypasses here
     -- instead we can use a function or copypaste stuff inside the callbacks
     local function CheckBypass()
@@ -221,24 +214,16 @@ function addon:FadeOutBarTimer(alpha_target, bar_name)
     return timer
 end
 
-function addon:PrintTable(table)
-    for k, v in pairs(table) do
-        print(k)
-        print(v)
-    end
-end
-
 ---Securely hook a bar and its buttons
 ---@param bar Frame
 ---@param bar_name string
 function addon:HookBar(bar, bar_name)
-    -- print(">>> BAR")
-    print(bar_name)
-    -- addon:PrintTable(bar)
-    -- print(bar)
-    -- print(bar_name)
-    -- print("BAR_NAME " .. bar_name)
-    bar:SetAlpha(0)
+    -- Ignore some bars according to configuration
+    if (addon.optionValues[bar_name] == false) then
+        return
+    end
+    -- Apply min alpha
+    bar:SetAlpha(addon.optionValues["AlphaMin"] or 0)
     -- this only hooks the bar frame, buttons are ignored here
     self:SecureHook(bar, bar, bar_name)
     -- so we have to hook buttons individually
