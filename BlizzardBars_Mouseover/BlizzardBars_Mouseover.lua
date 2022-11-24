@@ -286,7 +286,7 @@ end
 function addon:HideBars()
     self:ResumeCallbacks()
     for bar_name, bar in pairs(self.bars) do
-        bar:SetAlpha(0)
+        addon:ApplyOnBar(bar, bar_name, nil)
         self:SetBlingRender(bar_name, false)
     end
 end
@@ -528,7 +528,6 @@ addon.configOptions = {
             name = "Minimum Alpha",
             desc = "Set the minimum visibility (alpha) of Action Bars",
             type = "range",
-
             min = 0,
             max = 1,
             step = 0.01,
@@ -589,6 +588,7 @@ end
 --- @param ... unknown Any payloads passed by the event handlers.
 function addon:OnEvent(event, ...)
     if (event == "PLAYER_MOUNT_DISPLAY_CHANGED") then
+        -- print("EVENT PLAYER_MOUNT_DISPLAY_CHANGED")
         self:Dragonriding()
     elseif (event == "ACTIONBAR_SHOWGRID") then
         self:ShowBars()
@@ -637,16 +637,24 @@ end
 ---@param info any
 ---@param input any
 function MouseOverBars:SetBoolValue(info, input)
-    local bar = addon.bars[info[1]]
-    if (input) then
-        bar:SetAlpha(addon.optionValues["AlphaMin"])
-    else
-        bar:SetAlpha(addon.optionValues["AlphaMax"])
-    end
+    addon:ApplyOnBar(addon.bars[info[1]], info[1], input)
     addon.optionValues[info[1]] = input
     addon:SaveToDB({
         configuration = addon.optionValues
     })
+end
+
+function addon:ApplyOnBar(bar, bar_name, input)
+    local apply = input
+    if apply == nil then
+        apply = self.optionValues[bar_name]
+    end
+
+    if (apply) then
+        bar:SetAlpha(addon.optionValues["AlphaMin"])
+    else
+        bar:SetAlpha(addon.optionValues["AlphaMax"])
+    end
 end
 
 -- Initialization.
