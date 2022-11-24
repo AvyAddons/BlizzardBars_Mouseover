@@ -158,7 +158,8 @@ function addon:SecureHook(frame, alpha_target, bar_name)
         -- if we're dragonriding and this is the main bar, bypass the function
         local dragonridingBypass = (self.dragonriding and bar_name == MAIN_BAR)
         -- ad-hoc bypass of any given bar
-        local adHocBypass = (self.bypass == bar_name)
+        local adHocBypass = (self.bypass == bar_name or addon.optionValues[bar_name] == false)
+
         return not (dragonridingBypass or adHocBypass)
     end
 
@@ -217,12 +218,10 @@ end
 ---@param bar Frame
 ---@param bar_name string
 function addon:HookBar(bar, bar_name)
-    -- Ignore some bars according to configuration
-    if (addon.optionValues[bar_name] == false) then
-        return
+    -- Ignore some bars according to configuration to apply min alpha
+    if (addon.optionValues[bar_name]) then
+        bar:SetAlpha(addon.optionValues["AlphaMin"])
     end
-    -- Apply min alpha
-    bar:SetAlpha(addon.optionValues["AlphaMin"])
     -- this only hooks the bar frame, buttons are ignored here
     self:SecureHook(bar, bar, bar_name)
     -- so we have to hook buttons individually
@@ -398,7 +397,7 @@ addon.configOptions = {
     type = "group",
     width = "full",
     get = "GetValue",
-    set = "SetValue",
+    set = "SetNumberValue",
     args = {
         ActionBars = {
             order = 1,
@@ -410,56 +409,64 @@ addon.configOptions = {
             name = "Action Bar 1",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 1",
-            width = 0.9
+            width = 0.9,
+            set = "SetBoolValue"
         },
         MultiBarBottomLeft = {
             order = 2,
             name = "Action Bar 2",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 2",
-            width = 0.9
+            width = 0.9,
+            set = "SetBoolValue"
         },
         MultiBarBottomRight = {
             order = 2,
             name = "Action Bar 3",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 3",
-            width = 0.9
+            width = 0.9,
+            set = "SetBoolValue"
         },
         MultiBarRight = {
             order = 2,
             name = "Action Bar 4",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 4",
-            width = 0.9
+            width = 0.9,
+            set = "SetBoolValue"
         },
         MultiBarLeft = {
             order = 2,
             name = "Action Bar 5",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 5",
-            width = 0.9
+            width = 0.9,
+            set = "SetBoolValue"
         },
         MultiBar5 = {
             order = 2,
             name = "Action Bar 6",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 6",
-            width = 0.9
+            width = 0.9,
+            set = "SetBoolValue"
         },
         MultiBar6 = {
             order = 2,
             name = "Action Bar 7",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 7",
-            width = 0.9
+            width = 0.9,
+            set = "SetBoolValue"
         },
         MultiBar7 = {
             order = 2,
             name = "Action Bar 8",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 8",
-            width = 0.9
+            width = 0.9,
+            set = "SetBoolValue"
         },
         FadeInTime = {
             order = 3,
@@ -615,10 +622,27 @@ function MouseOverBars:GetValue(info)
     return addon.optionValues[info[1]]
 end
 
---- Configuration setter
+--- Configuration number setter
 ---@param info any
 ---@param input any
-function MouseOverBars:SetValue(info, input)
+function MouseOverBars:SetNumberValue(info, input)
+    addon.optionValues[info[1]] = input
+    addon:SaveToDB({
+        configuration = addon.optionValues
+    })
+    addon:ComputeValues()
+end
+
+--- Configuration boolean setter
+---@param info any
+---@param input any
+function MouseOverBars:SetBoolValue(info, input)
+    local bar = addon.bars[info[1]]
+    if (input) then
+        bar:SetAlpha(addon.optionValues["AlphaMin"])
+    else
+        bar:SetAlpha(addon.optionValues["AlphaMax"])
+    end
     addon.optionValues[info[1]] = input
     addon:SaveToDB({
         configuration = addon.optionValues
