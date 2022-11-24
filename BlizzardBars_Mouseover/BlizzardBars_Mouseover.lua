@@ -232,8 +232,8 @@ end
 ---@param bar Frame
 ---@param bar_name string
 function addon:HookBar(bar, bar_name)
-    print(">>> BAR")
-    print(bar[1])
+    -- print(">>> BAR")
+    print(bar_name)
     -- addon:PrintTable(bar)
     -- print(bar)
     -- print(bar_name)
@@ -421,56 +421,56 @@ addon.configOptions = {
             name = "Action Bars",
             type = "header"
         },
-        ActionBar1 = {
+        MainMenuBar = {
             order = 2,
             name = "Action Bar 1",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 1",
             width = 0.9
         },
-        ActionBar2 = {
+        MultiBarBottomLeft = {
             order = 2,
             name = "Action Bar 2",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 2",
             width = 0.9
         },
-        ActionBar3 = {
+        MultiBarBottomRight = {
             order = 2,
             name = "Action Bar 3",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 3",
             width = 0.9
         },
-        ActionBar4 = {
+        MultiBarRight = {
             order = 2,
             name = "Action Bar 4",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 4",
             width = 0.9
         },
-        ActionBar5 = {
+        MultiBarLeft = {
             order = 2,
             name = "Action Bar 5",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 5",
             width = 0.9
         },
-        ActionBar6 = {
+        MultiBar5 = {
             order = 2,
             name = "Action Bar 6",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 6",
             width = 0.9
         },
-        ActionBar7 = {
+        MultiBar6 = {
             order = 2,
             name = "Action Bar 7",
             type = "toggle",
             desc = "Activate Mouseover on Action Bar 7",
             width = 0.9
         },
-        ActionBar8 = {
+        MultiBar7 = {
             order = 2,
             name = "Action Bar 8",
             type = "toggle",
@@ -557,14 +557,14 @@ addon.configOptions = {
 }
 --- Configuration option values
 addon.optionValues = {
-    ActionBar1 = true,
-    ActionBar2 = true,
-    ActionBar3 = true,
-    ActionBar4 = true,
-    ActionBar5 = true,
-    ActionBar6 = true,
-    ActionBar7 = true,
-    ActionBar8 = true,
+    MainMenuBar = true,
+    MultiBarBottomLeft = true,
+    MultiBarBottomRight = true,
+    MultiBarRight = true,
+    MultiBarLeft = true,
+    MultiBar5 = true,
+    MultiBar6 = true,
+    MultiBar7 = true,
     FadeInDelay = 0,
     FadeInDuration = 0.2,
     FadeOutDelay = 0,
