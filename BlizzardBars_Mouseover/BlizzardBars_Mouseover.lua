@@ -56,21 +56,6 @@ local PET_ACTION_BUTTON = "PetActionButton"
 -- * Don't put frame handles or other widget references in here,
 --   just strings, numbers, and booleans. Tables also work.
 
---- Saves table to addon database
---- Remarks; it merges existing data with updated data and updates addon.db
----@param : any
-function addon:SaveToDB(values)
-    local currentValues = _G[addonName .. "_DB"]
-    if currentValues == nil then
-        currentValues = {}
-    end
-    for k, v in pairs(values) do
-        currentValues[k] = v
-    end
-    _G[addonName .. "_DB"] = currentValues
-    self.db = currentValues
-end
-
 -- Utility Functions
 -----------------------------------------------------------
 -- Add utility functions like time formatting and similar here.
@@ -105,6 +90,7 @@ function addon:Timer(fn, delay, every)
     C_TimerAfter(delay, timer.callback)
     return timer
 end
+
 ---Cancel a timer by the bar name
 ---@param bar_name string
 function addon:CancelTimer(bar_name)
@@ -146,6 +132,21 @@ end
 -- Addon API
 -----------------------------------------------------------
 
+--- Saves table to addon database
+--- Remarks; it merges existing data with updated data and updates addon.db
+---@param : any
+function addon:SaveToDB(values)
+    local currentValues = _G[addonName .. "_DB"]
+    if currentValues == nil then
+        currentValues = {}
+    end
+    for k, v in pairs(values) do
+        currentValues[k] = v
+    end
+    _G[addonName .. "_DB"] = currentValues
+    self.db = currentValues
+end
+
 --- Securely hooks into a frame's OnEnter and OnLeave to show/hide.
 ---@param frame Frame Base frame on which to hook
 ---@param alpha_target Frame Frame whose alpha should change
@@ -163,7 +164,6 @@ function addon:SecureHook(frame, alpha_target, bar_name)
 
     frame:HookScript("OnEnter", function()
         if (addon.enabled and CheckBypass()) then
-            -- print("ENTER CONTROL " .. bar_name)
             addon:CancelTimer(bar_name)
             addon.timers[bar_name] = addon:FadeInBarTimer(alpha_target, bar_name)
         end
@@ -171,7 +171,6 @@ function addon:SecureHook(frame, alpha_target, bar_name)
 
     frame:HookScript("OnLeave", function()
         if (addon.enabled and CheckBypass()) then
-            -- print("LEAVE CONTROL " .. bar_name)
             addon:CancelTimer(bar_name)
             addon.timers[bar_name] = addon:FadeOutBarTimer(alpha_target, bar_name)
         end
@@ -181,36 +180,36 @@ end
 function addon:FadeInBarTimer(alpha_target, bar_name)
     local alpha = addon.fades[bar_name]
     if alpha == nil then
-        alpha = addon.optionValues["AlphaMin"] or 0
+        alpha = addon.optionValues["AlphaMin"]
         addon.fades[bar_name] = alpha
     end
     local timer = addon:Timer(function()
-        alpha = alpha + 0.1
-        if alpha >= 1 then
+        alpha = alpha + addon.computedOptionValues["FadeInAlphaStep"]
+        if alpha >= addon.optionValues["AlphaMax"] then
             addon:CancelTimer(bar_name)
-            alpha = 1
+            alpha = addon.optionValues["AlphaMax"]
         end
         addon.fades[bar_name] = alpha
         alpha_target:SetAlpha(alpha)
-    end, addon.optionValues["FadeInDelay"] or 0, 1)
+    end, (addon.optionValues["FadeInDelay"] or 0), addon.optionValues["MaxRefreshRate"])
     return timer
 end
 
 function addon:FadeOutBarTimer(alpha_target, bar_name)
     local alpha = addon.fades[bar_name]
     if alpha == nil then
-        alpha = addon.optionValues["AlphaMax"] or 0
+        alpha = addon.optionValues["AlphaMax"]
         addon.fades[bar_name] = alpha
     end
     local timer = addon:Timer(function()
-        alpha = alpha - 0.1
-        if alpha <= 0 then
+        alpha = alpha - addon.computedOptionValues["FadeOutAlphaStep"]
+        if alpha <= addon.optionValues["AlphaMin"] then
             addon:CancelTimer(bar_name)
-            alpha = 0
+            alpha = addon.optionValues["AlphaMin"]
         end
         addon.fades[bar_name] = alpha
         alpha_target:SetAlpha(alpha)
-    end, addon.optionValues["FadeOutDelay"] or 0, 1)
+    end, (addon.optionValues["FadeOutDelay"] or 0), addon.optionValues["MaxRefreshRate"])
     return timer
 end
 
@@ -223,7 +222,7 @@ function addon:HookBar(bar, bar_name)
         return
     end
     -- Apply min alpha
-    bar:SetAlpha(addon.optionValues["AlphaMin"] or 0)
+    bar:SetAlpha(addon.optionValues["AlphaMin"])
     -- this only hooks the bar frame, buttons are ignored here
     self:SecureHook(bar, bar, bar_name)
     -- so we have to hook buttons individually
@@ -555,8 +554,25 @@ addon.optionValues = {
     FadeOutDelay = 0,
     FadeOutDuration = 0.2,
     AlphaMin = 0,
-    AlphaMax = 1
+    AlphaMax = 1,
+    MaxRefreshRate = 0.01
 }
+
+--- Computed option values
+addon.computedOptionValues = {
+    FadeInAlphaStep = 0.1,
+    FadeOutAlphaStep = 0.1
+}
+
+--- Compute option values
+function addon:ComputeValues()
+    -- TODO: check if we can use math.abs()
+    local alphaRange = self.optionValues["AlphaMax"] - self.optionValues["AlphaMin"]
+    self.computedOptionValues = {
+        FadeInAlphaStep = alphaRange / (self.optionValues["FadeInDuration"] / self.optionValues["MaxRefreshRate"]),
+        FadeOutAlphaStep = alphaRange / (self.optionValues["FadeOutDuration"] / self.optionValues["MaxRefreshRate"])
+    }
+end
 
 -- Addon Core
 -----------------------------------------------------------
@@ -642,12 +658,13 @@ function addon:OnInit()
     -- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
     table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
 
-    self:RegisterChatCommand('bbm')
-
     -- Todo: Rework
     LibStub("AceConfig-3.0"):RegisterOptionsTable("MouseOverBars", self.configOptions, nil)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("MouseOverBars", "BlizzardBars")
+    -- Compute option internal values
+    self:ComputeValues()
 
+    self:RegisterChatCommand('bbm')
 end
 
 -- Enabling.
@@ -864,7 +881,8 @@ end
                 addon.eventFrame:UnregisterEvent("ADDON_LOADED")
                 -- Initialize our saved variables, or use defaults if empty
                 addon.db = _G[addonName .. "_DB"]
-                if addon.db == nil then
+                local overwrite = false
+                if overwrite or addon.db == nil then
                     -- Add default settings here
                     addon:SaveToDB({
                         pet_bar_ignore = false,
