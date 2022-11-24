@@ -3,8 +3,8 @@
 ## Title: BlizzardBars_Mouseover
 ## Notes: Hides the default Blizzard bars, shows them on mouseover.
 ## Author: Avyiel
-## Version: @project-version@
-## X-Date: @project-date-iso@
+## Version: v1.3.0
+## X-Date: 2022-11-20T15:05:09Z
 
 ## DefaultState: Enabled
 ## SavedVariables: BlizzardBars_Mouseover_DB
@@ -15,9 +15,19 @@
 ## X-Curse-Project-ID: 699633
 ## X-Wago-ID: VBNB7L6x
 
+
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\AceAddon-3.0\AceAddon-3.0.xml
+Libs\AceEvent-3.0\AceEvent-3.0.xml
+Libs\AceDB-3.0\AceDB-3.0.xml
+Libs\AceConsole-3.0\AceConsole-3.0.xml
+Libs\AceGUI-3.0\AceGUI-3.0.xml
+Libs\AceConfig-3.0\AceConfig-3.0.xml
+Libs\AceDBOptions-3.0\AceDBOptions-3.0.xml
+Libs\AceTimer-3.0\AceTimer-3.0.lua
+Libs\AceHook-3.0\AceHook-3.0.lua
+
 Localization.lua
 BlizzardBars_Mouseover.lua
-
-#@debug@
-## Version: DEV
-#@end-debug@
