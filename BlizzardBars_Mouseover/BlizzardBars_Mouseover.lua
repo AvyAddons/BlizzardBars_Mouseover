@@ -693,6 +693,54 @@ function addon:OnInit()
     -- Todo: Rework
     LibStub("AceConfig-3.0"):RegisterOptionsTable("MouseOverBars", self.configOptions, nil)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("MouseOverBars", "BlizzardBars")
+
+    local panel = CreateFrame("Frame")
+    panel.name = "MyAddOn" -- see panel fields
+    InterfaceOptions_AddCategory(panel) -- see InterfaceOptions API
+
+    -- add widgets to the panel as desired
+    local title = panel:CreateFontString("ARTWORK", nil, "GameFontNormalLarge")
+    title:SetPoint("TOP")
+    title:SetText("MyAddOn")
+
+    local cb = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
+    cb:SetPoint("TOPLEFT", 20, -20)
+    cb.Text:SetText("Print when you jump")
+    cb:SetChecked(true)
+
+    local cb2 = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
+    cb2:SetPoint("TOPLEFT", 20, -60)
+    cb2.Text:SetText("Print when you jump2")
+    cb2:SetChecked(true)
+
+    local SliderBackdrop = {
+        bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
+        edgeFile = "Interface\\Buttons\\UI-SliderBar-Border",
+        tile = true,
+        tileSize = 8,
+        edgeSize = 8,
+        insets = {
+            left = 3,
+            right = 3,
+            top = 6,
+            bottom = 6
+        }
+    }
+
+    local slider = CreateFrame("Slider", nil, panel, "OptionsSliderTemplate")
+    slider:SetOrientation("HORIZONTAL")
+    slider:SetHeight(15)
+    -- slider:SetHitRectInsets(0, 0, -10, 0)
+    -- slider:SetBackdrop(SliderBackdrop)
+    -- slider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+    slider:SetPoint("TOPLEFT", 20, -80)
+    slider:SetValue(0)
+    -- slider:SetScript("OnValueChanged",Slider_OnValueChanged)
+    -- slider:SetScript("OnEnter", Control_OnEnter)
+    -- slider:SetScript("OnLeave", Control_OnLeave)
+    -- slider:SetScript("OnMouseUp", Slider_OnMouseUp)
+    -- slider:SetScript("OnMouseWheel", Slider_OnMouseWheel)
+
     -- Compute option internal values
     self:ComputeValues()
 
