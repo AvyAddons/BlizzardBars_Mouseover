@@ -486,6 +486,7 @@ end
 
 function addon:ApplyOnBar(bar, bar_name)
     if bar == nil or bar_name == nil or (not self:CheckBypass(bar_name)) then
+        if bar ~= nil then bar:SetAlpha(1) end
         return
     end
     local apply = self.optionValues[bar_name]
