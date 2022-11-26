@@ -1,5 +1,3 @@
-MouseOverBars = LibStub("AceAddon-3.0"):NewAddon("MouseOverBars")
-
 -- Retrieve addon folder name, and our local, private namespace.
 ---@type string, table
 local addonName, addon = ...
@@ -219,9 +217,7 @@ end
 ---@param bar_name string
 function addon:HookBar(bar, bar_name)
     -- Ignore some bars according to configuration to apply min alpha
-    if (addon.optionValues[bar_name]) then
-        bar:SetAlpha(addon.optionValues["AlphaMin"])
-    end
+    self:ApplyOnBar(bar, bar_name)
     -- this only hooks the bar frame, buttons are ignored here
     self:SecureHook(bar, bar, bar_name)
     -- so we have to hook buttons individually
@@ -286,7 +282,7 @@ end
 function addon:HideBars()
     self:ResumeCallbacks()
     for bar_name, bar in pairs(self.bars) do
-        addon:ApplyOnBar(bar, bar_name, nil)
+        self:ApplyOnBar(bar, bar_name)
         self:SetBlingRender(bar_name, false)
     end
 end
@@ -390,161 +386,7 @@ addon.dragonriding = false
 --- Generic bypass, currently in use for flyouts
 ---@type string|nil
 addon.bypass = nil
---- Configuration panel
-addon.configOptions = {
-    name = "MouseOverBars",
-    handler = MouseOverBars,
-    type = "group",
-    width = "full",
-    get = "GetValue",
-    set = "SetNumberValue",
-    args = {
-        ActionBars = {
-            order = 1,
-            name = "Action Bars",
-            type = "header"
-        },
-        MainMenuBar = {
-            order = 2,
-            name = "Action Bar 1",
-            type = "toggle",
-            desc = "Activate Mouseover on Action Bar 1",
-            width = 0.9,
-            set = "SetBoolValue"
-        },
-        MultiBarBottomLeft = {
-            order = 2,
-            name = "Action Bar 2",
-            type = "toggle",
-            desc = "Activate Mouseover on Action Bar 2",
-            width = 0.9,
-            set = "SetBoolValue"
-        },
-        MultiBarBottomRight = {
-            order = 2,
-            name = "Action Bar 3",
-            type = "toggle",
-            desc = "Activate Mouseover on Action Bar 3",
-            width = 0.9,
-            set = "SetBoolValue"
-        },
-        MultiBarRight = {
-            order = 2,
-            name = "Action Bar 4",
-            type = "toggle",
-            desc = "Activate Mouseover on Action Bar 4",
-            width = 0.9,
-            set = "SetBoolValue"
-        },
-        MultiBarLeft = {
-            order = 2,
-            name = "Action Bar 5",
-            type = "toggle",
-            desc = "Activate Mouseover on Action Bar 5",
-            width = 0.9,
-            set = "SetBoolValue"
-        },
-        MultiBar5 = {
-            order = 2,
-            name = "Action Bar 6",
-            type = "toggle",
-            desc = "Activate Mouseover on Action Bar 6",
-            width = 0.9,
-            set = "SetBoolValue"
-        },
-        MultiBar6 = {
-            order = 2,
-            name = "Action Bar 7",
-            type = "toggle",
-            desc = "Activate Mouseover on Action Bar 7",
-            width = 0.9,
-            set = "SetBoolValue"
-        },
-        MultiBar7 = {
-            order = 2,
-            name = "Action Bar 8",
-            type = "toggle",
-            desc = "Activate Mouseover on Action Bar 8",
-            width = 0.9,
-            set = "SetBoolValue"
-        },
-        FadeInTime = {
-            order = 3,
-            name = "Fade in Times",
-            type = "header"
-        },
-        FadeInDelay = {
-            order = 4,
-            name = "Fade in Delay",
-            desc = "Time before fade in start",
-            type = "range",
-            min = 0,
-            max = 3,
-            step = 0.01,
-            width = 1.8
-        },
-        FadeInDuration = {
-            order = 4,
-            name = "Fade in Duration",
-            desc = "Time to reach max Alpha",
-            type = "range",
-            min = 0,
-            max = 3,
-            step = 0.01,
-            width = 1.8
-        },
-        FadeOutTime = {
-            order = 5,
-            name = "Fade out Times",
-            type = "header"
-        },
-        FadeOutDelay = {
-            order = 6,
-            name = "Fade out Delay",
-            desc = "Time before fade out start",
-            type = "range",
-            min = 0,
-            max = 3,
-            step = 0.01,
-            width = 1.8
-        },
-        FadeOutDuration = {
-            order = 6,
-            name = "Fade out Duration",
-            desc = "Time to reach min Alpha",
-            type = "range",
-            min = 0,
-            max = 3,
-            step = 0.01,
-            width = 1.8
-        },
-        Alpha = {
-            order = 7,
-            name = "Alpha",
-            type = "header"
-        },
-        AlphaMin = {
-            order = 8,
-            name = "Minimum Alpha",
-            desc = "Set the minimum visibility (alpha) of Action Bars",
-            type = "range",
-            min = 0,
-            max = 1,
-            step = 0.01,
-            width = 1.8
-        },
-        AlphaMax = {
-            order = 9,
-            name = "Maximum Alpha",
-            desc = "Set the maximum visibility (alpha) of Action Bars",
-            type = "range",
-            min = 0,
-            max = 1,
-            step = 0.01,
-            width = 1.8
-        }
-    }
-}
+
 --- Configuration option values
 addon.optionValues = {
     MainMenuBar = true,
@@ -555,6 +397,8 @@ addon.optionValues = {
     MultiBar5 = true,
     MultiBar6 = true,
     MultiBar7 = true,
+    StanceBar = true,
+    PetBar = true,
     FadeInDelay = 0,
     FadeInDuration = 0.2,
     FadeOutDelay = 0,
@@ -572,8 +416,7 @@ addon.computedOptionValues = {
 
 --- Compute option values
 function addon:ComputeValues()
-    -- TODO: check if we can use math.abs()
-    local alphaRange = self.optionValues["AlphaMax"] - self.optionValues["AlphaMin"]
+    local alphaRange = math.abs(self.optionValues["AlphaMax"] - self.optionValues["AlphaMin"])
     self.computedOptionValues = {
         FadeInAlphaStep = alphaRange / (self.optionValues["FadeInDuration"] / self.optionValues["MaxRefreshRate"]),
         FadeOutAlphaStep = alphaRange / (self.optionValues["FadeOutDuration"] / self.optionValues["MaxRefreshRate"])
@@ -616,45 +459,144 @@ function addon:OnChatCommand(editBox, command, ...)
     end
 end
 
---- Configuration getter
----@param info any
-function MouseOverBars:GetValue(info)
-    return addon.optionValues[info[1]]
-end
-
---- Configuration number setter
----@param info any
----@param input any
-function MouseOverBars:SetNumberValue(info, input)
-    addon.optionValues[info[1]] = input
-    addon:SaveToDB({
-        configuration = addon.optionValues
-    })
-    addon:ComputeValues()
-end
-
---- Configuration boolean setter
----@param info any
----@param input any
-function MouseOverBars:SetBoolValue(info, input)
-    addon:ApplyOnBar(addon.bars[info[1]], info[1], input)
-    addon.optionValues[info[1]] = input
-    addon:SaveToDB({
-        configuration = addon.optionValues
-    })
-end
-
-function addon:ApplyOnBar(bar, bar_name, input)
-    local apply = input
-    if apply == nil then
-        apply = self.optionValues[bar_name]
-    end
+function addon:ApplyOnBar(bar, bar_name)
+    local apply = self.optionValues[bar_name]
 
     if (apply) then
         bar:SetAlpha(addon.optionValues["AlphaMin"])
     else
-        bar:SetAlpha(addon.optionValues["AlphaMax"])
+        bar:SetAlpha(1)
     end
+end
+
+function addon:CreateButton(parent, name, title, x, y, default)
+    if default == nil then
+        default = true
+    end
+    local cb = CreateFrame("CheckButton", name, parent, "InterfaceOptionsCheckButtonTemplate")
+    self = cb
+    cb:SetPoint("TOPLEFT", x, y)
+    cb.Text:SetText(title)
+    if addon.optionValues[name] ~= nil then
+        default = addon.optionValues[name]
+    end
+    cb:SetChecked(default)
+    function self:OnCheckBoxClicked()
+        addon.optionValues[name] = self:GetChecked()
+        addon:SaveToDB({
+            configuration = addon.optionValues
+        })
+        addon:ApplyOnBar(addon.bars[name], name)
+    end
+    cb:SetScript("OnClick", self.OnCheckBoxClicked)
+    return cb
+end
+
+function addon:CreateHeader(parent, name, title, y)
+    local header = parent:CreateFontString("ARTWORK", nil, "GameFontNormalLarge")
+    header:SetPoint("TOP", -20, y)
+    header:SetText(title)
+    local line = parent:CreateTexture()
+    line:SetTexture("Interface/BUTTONS/WHITE8X8")
+    line:SetColorTexture(255, 255, 255, 1)
+    line:SetSize(675, 0.8)
+    line:SetPoint("TOP", -7, y - 17)
+    return header
+end
+
+function addon:RoundToNearestPercentile(value)
+    local value = value * 100
+    local remain = math.fmod(value, 1)
+    if remain < 0.5 then
+        value = value - remain
+    elseif remain > 0.5 then
+        value = value + 1 - remain
+    end
+    return value / 100
+end
+
+function addon:CreateSlider(parent, name, title, x, y, suffix, default)
+    if suffix == nil then
+        suffix = ""
+    end
+    if default == nil then
+        default = 0
+    end
+    local slider = CreateFrame("Slider", name, parent, "OptionsSliderTemplate")
+    self = slider
+    slider.currentValue = -1
+    slider:SetOrientation("HORIZONTAL")
+    slider:SetWidth(250)
+    slider:SetHeight(15)
+    getglobal(name .. "Low"):SetText("0" .. suffix)
+    getglobal(name .. "High"):SetText("1" .. suffix)
+    slider:SetPoint("TOPLEFT", x, y)
+    slider:SetMinMaxValues(0, 1)
+    if addon.optionValues[name] ~= nil then
+        default = addon.optionValues[name]
+    end
+    slider.Text:SetText(title .. " (" .. default .. suffix .. ")")
+    slider:SetValue(default)
+    slider:SetValueStep(0.05)
+    slider:SetObeyStepOnDrag(true)
+    function self:OnSliderValueChanged(value)
+        local roundValue = addon:RoundToNearestPercentile(value)
+        if roundValue == self.currentValue then
+            return
+        end
+        self.currentValue = roundValue
+        self.Text:SetText(title .. " (" .. roundValue .. suffix .. ")")
+        addon.optionValues[name] = roundValue
+        addon:SaveToDB({
+            configuration = addon.optionValues
+        })
+        addon:ComputeValues()
+        -- TODO Loop on every action bars
+        -- addon:ApplyOnBar(addon.bars[name], name)
+    end
+    slider:SetScript("OnValueChanged", self.OnSliderValueChanged)
+    return slider
+end
+
+function addon:CreateConfigPanel()
+    local panel = CreateFrame("Frame")
+    panel.name = "BlizzardBars" -- see panel fields
+    InterfaceOptions_AddCategory(panel) -- see InterfaceOptions API
+
+    -- add widgets to the panel as desired
+    local title = panel:CreateFontString("ARTWORK", nil, "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT")
+    title:SetText("Settings")
+
+    self:CreateHeader(panel, "ActionBars", "Action Bars", -25)
+
+    -- Button to activate/deactivate mouseover
+    self:CreateButton(panel, "MainMenuBar", "Action Bar 1", 20, -50)
+    self:CreateButton(panel, "MultiBarBottomLeft", "Action Bar 2", 193, -50)
+    self:CreateButton(panel, "MultiBarBottomRight", "Action Bar 3", 366, -50)
+    self:CreateButton(panel, "MultiBarRight", "Action Bar 4", 540, -50)
+    self:CreateButton(panel, "MultiBarLeft", "Action Bar 5", 20, -110)
+    self:CreateButton(panel, "MultiBar5", "Action Bar 6", 193, -110)
+    self:CreateButton(panel, "MultiBar6", "Action Bar 7", 366, -110)
+    self:CreateButton(panel, "MultiBar7", "Action Bar 8", 540, -110)
+    self:CreateButton(panel, "StanceBar", "Stance Bar", 20, -170)
+    self:CreateButton(panel, "PetBar", "Pet Action Bar", 193, -170)
+
+    self:CreateHeader(panel, "FadeInTimes", "Fade in times", -210)
+
+    self:CreateSlider(panel, "FadeInDelay", "Fade in delay", 20, -260, "s")
+    self:CreateSlider(panel, "FadeInDuration", "Fade in duration", 360, -260, "s")
+
+    self:CreateHeader(panel, "FadeOutTimes", "Fade out times", -300)
+
+    self:CreateSlider(panel, "FadeOutDelay", "Fade out delay", 20, -350, "s")
+    self:CreateSlider(panel, "FadeOutDuration", "Fade out duration", 360, -350, "s")
+
+    self:CreateHeader(panel, "Alphas", "Aphas", -390)
+
+    self:CreateSlider(panel, "AlphaMin", "Minimum Alpha", 20, -440)
+    self:CreateSlider(panel, "AlphaMax", "Maximum Alpha", 360, -440)
+
 end
 
 -- Initialization.
@@ -689,61 +631,11 @@ function addon:OnInit()
     -- this needs a manual insert, since otherwise this button is never visible
     -- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
     table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
-
-    -- Todo: Rework
-    LibStub("AceConfig-3.0"):RegisterOptionsTable("MouseOverBars", self.configOptions, nil)
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("MouseOverBars", "BlizzardBars")
-
-    local panel = CreateFrame("Frame")
-    panel.name = "MyAddOn" -- see panel fields
-    InterfaceOptions_AddCategory(panel) -- see InterfaceOptions API
-
-    -- add widgets to the panel as desired
-    local title = panel:CreateFontString("ARTWORK", nil, "GameFontNormalLarge")
-    title:SetPoint("TOP")
-    title:SetText("MyAddOn")
-
-    local cb = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
-    cb:SetPoint("TOPLEFT", 20, -20)
-    cb.Text:SetText("Print when you jump")
-    cb:SetChecked(true)
-
-    local cb2 = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
-    cb2:SetPoint("TOPLEFT", 20, -60)
-    cb2.Text:SetText("Print when you jump2")
-    cb2:SetChecked(true)
-
-    local SliderBackdrop = {
-        bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
-        edgeFile = "Interface\\Buttons\\UI-SliderBar-Border",
-        tile = true,
-        tileSize = 8,
-        edgeSize = 8,
-        insets = {
-            left = 3,
-            right = 3,
-            top = 6,
-            bottom = 6
-        }
-    }
-
-    local slider = CreateFrame("Slider", nil, panel, "OptionsSliderTemplate")
-    slider:SetOrientation("HORIZONTAL")
-    slider:SetHeight(15)
-    -- slider:SetHitRectInsets(0, 0, -10, 0)
-    -- slider:SetBackdrop(SliderBackdrop)
-    -- slider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
-    slider:SetPoint("TOPLEFT", 20, -80)
-    slider:SetValue(0)
-    -- slider:SetScript("OnValueChanged",Slider_OnValueChanged)
-    -- slider:SetScript("OnEnter", Control_OnEnter)
-    -- slider:SetScript("OnLeave", Control_OnLeave)
-    -- slider:SetScript("OnMouseUp", Slider_OnMouseUp)
-    -- slider:SetScript("OnMouseWheel", Slider_OnMouseWheel)
-
     -- Compute option internal values
     self:ComputeValues()
-
+    -- Initialize Blizzard options panel
+    self:CreateConfigPanel()
+    -- Chat commands
     self:RegisterChatCommand('bbm')
 end
 
