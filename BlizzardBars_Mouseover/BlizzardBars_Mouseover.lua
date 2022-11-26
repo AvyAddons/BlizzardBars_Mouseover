@@ -1,9 +1,10 @@
 -- Retrieve addon folder name, and our local, private namespace.
----@type string, table
+---@transition string, table
 local addonName, addon = ...
+local addonShortName = "BlizzardBars"
 
 -- Fetch the localization table
----@type table<string, string>
+---@transition table<string, string>
 local L = addon.L
 
 --[==[@debug@
@@ -24,7 +25,7 @@ local string_split = string.split
 -----------------------------------------------------------
 -- Up-value any WoW functions used here.
 local _G = _G
----@type table<string, function>
+---@transition table<string, function>
 local SlashCmdList = _G["SlashCmdList"]
 local GetBuildInfo = _G.GetBuildInfo
 local GetAddOnInfo = _G.GetAddOnInfo
@@ -32,11 +33,11 @@ local GetNumAddOns = _G.GetNumAddOns
 local GetAddOnEnableState = _G.GetAddOnEnableState
 local GetTime = _G.GetTime
 local C_TimerAfter = _G.C_Timer.After
----@type Frame
+---@transition Frame
 local QuickKeybindFrame = _G["QuickKeybindFrame"]
----@type Frame
+---@transition Frame
 local EditModeManagerFrame = _G["EditModeManagerFrame"]
----@type Frame
+---@transition Frame
 local SpellFlyout = _G["SpellFlyout"]
 
 -- Constants
@@ -145,38 +146,59 @@ function addon:SaveToDB(values)
     self.db = currentValues
 end
 
+--- Bypass transformation for specific bars
+---@param bar_name any
+function addon:CheckBypass(bar_name)
+    -- if we're dragonriding and this is the main bar, bypass the function
+    local dragonridingBypass = (self.dragonriding and bar_name == MAIN_BAR)
+    -- ad-hoc bypass of any given bar
+    local adHocBypass = (self.bypass == bar_name or addon.optionValues[bar_name] == false)
+
+    return not (dragonridingBypass or adHocBypass)
+end
+
 --- Securely hooks into a frame's OnEnter and OnLeave to show/hide.
 ---@param frame Frame Base frame on which to hook
----@param alpha_target Frame Frame whose alpha should change
+---@param bar Frame Frame whose alpha should change
 ---@param bar_name string Name of the base frame
-function addon:SecureHook(frame, alpha_target, bar_name)
-    -- because references need to be resolved on runtime, we can't declare the bypasses here
-    -- instead we can use a function or copypaste stuff inside the callbacks
-    local function CheckBypass()
-        -- if we're dragonriding and this is the main bar, bypass the function
-        local dragonridingBypass = (self.dragonriding and bar_name == MAIN_BAR)
-        -- ad-hoc bypass of any given bar
-        local adHocBypass = (self.bypass == bar_name or addon.optionValues[bar_name] == false)
-
-        return not (dragonridingBypass or adHocBypass)
-    end
-
+function addon:SecureHook(frame, bar, bar_name)
     frame:HookScript("OnEnter", function()
-        if (addon.enabled and CheckBypass()) then
-            addon:CancelTimer(bar_name)
-            addon.timers[bar_name] = addon:FadeInBarTimer(alpha_target, bar_name)
+        if (addon.enabled and addon:CheckBypass(bar_name)) then
+            addon:FadeBar("FadeIn", bar, bar_name)
         end
     end)
 
     frame:HookScript("OnLeave", function()
-        if (addon.enabled and CheckBypass()) then
-            addon:CancelTimer(bar_name)
-            addon.timers[bar_name] = addon:FadeOutBarTimer(alpha_target, bar_name)
+        if (addon.enabled and addon:CheckBypass(bar_name)) then
+            addon:FadeBar("FadeOut", bar, bar_name)
         end
     end)
 end
 
-function addon:FadeInBarTimer(alpha_target, bar_name)
+function addon:FadeBar(transition, bar, bar_name)
+    local bar_collection = {bar_name}
+    if self.optionValues["LinkActionBars"] then
+        bar_collection = self.bar_names
+    end
+    for _, bar_name in pairs(bar_collection) do
+        if self.optionValues[bar_name] then
+            bar = self.bars[bar_name]
+            addon:CancelTimer(bar_name)
+            if transition == "FadeOut" then
+                addon.timers[bar_name] = addon:FadeOutBarTimer(bar, bar_name)
+            elseif transition == "FadeIn" then
+                addon.timers[bar_name] = addon:FadeInBarTimer(bar, bar_name)
+            else
+                error("Transition '" .. transition .. "' not defined")
+            end
+        end
+    end
+end
+
+--- Apply fade-in for a bar or a group of bars using timers
+---@param bar any Bar instance
+---@param bar_name any Bar name
+function addon:FadeInBarTimer(bar, bar_name)
     local alpha = addon.fades[bar_name]
     if alpha == nil then
         alpha = addon.optionValues["AlphaMin"]
@@ -189,12 +211,15 @@ function addon:FadeInBarTimer(alpha_target, bar_name)
             alpha = addon.optionValues["AlphaMax"]
         end
         addon.fades[bar_name] = alpha
-        alpha_target:SetAlpha(alpha)
+        bar:SetAlpha(alpha)
     end, (addon.optionValues["FadeInDelay"] or 0), addon.optionValues["MaxRefreshRate"])
     return timer
 end
 
-function addon:FadeOutBarTimer(alpha_target, bar_name)
+--- Apply fade-out for a bar or a group of bars using timers
+---@param bar any Bar instance
+---@param bar_name any Bar name
+function addon:FadeOutBarTimer(bar, bar_name)
     local alpha = addon.fades[bar_name]
     if alpha == nil then
         alpha = addon.optionValues["AlphaMax"]
@@ -207,7 +232,7 @@ function addon:FadeOutBarTimer(alpha_target, bar_name)
             alpha = addon.optionValues["AlphaMin"]
         end
         addon.fades[bar_name] = alpha
-        alpha_target:SetAlpha(alpha)
+        bar:SetAlpha(alpha)
     end, (addon.optionValues["FadeOutDelay"] or 0), addon.optionValues["MaxRefreshRate"])
     return timer
 end
@@ -345,7 +370,7 @@ end
 ---Handles the pet bar chat command
 ---@param flag boolean|string
 function addon:PetBarHandler(flag)
-    if (type(flag) == string) then
+    if (transition(flag) == string) then
         self.db["pet_bar_ignore"] = not self.db["pet_bar_ignore"]
     else
         self.db["pet_bar_ignore"] = flag
@@ -384,7 +409,7 @@ addon.enabled = true
 --- Dragonriding hover bypass
 addon.dragonriding = false
 --- Generic bypass, currently in use for flyouts
----@type string|nil
+---@transition string|nil
 addon.bypass = nil
 
 --- Configuration option values
@@ -398,11 +423,12 @@ addon.optionValues = {
     MultiBar6 = true,
     MultiBar7 = true,
     StanceBar = true,
-    PetBar = true,
+    PetActionBar = true,
+    LinkActionBars = false,
     FadeInDelay = 0,
-    FadeInDuration = 0.2,
+    FadeInDuration = 0.1,
     FadeOutDelay = 0,
-    FadeOutDuration = 0.2,
+    FadeOutDuration = 0.1,
     AlphaMin = 0,
     AlphaMax = 1,
     MaxRefreshRate = 0.01
@@ -431,7 +457,6 @@ end
 --- @param ... unknown Any payloads passed by the event handlers.
 function addon:OnEvent(event, ...)
     if (event == "PLAYER_MOUNT_DISPLAY_CHANGED") then
-        -- print("EVENT PLAYER_MOUNT_DISPLAY_CHANGED")
         self:Dragonriding()
     elseif (event == "ACTIONBAR_SHOWGRID") then
         self:ShowBars()
@@ -442,7 +467,7 @@ end
 
 -- Your chat command handler.
 ---@param editBox table|frame The editbox the command was entered into.
----@param command string The name of the slash command type in.
+---@param command string The name of the slash command transition in.
 ---@param ... string Any additional arguments passed to your command, all as strings.
 function addon:OnChatCommand(editBox, command, ...)
     local arg1, arg2 = ...
@@ -460,8 +485,10 @@ function addon:OnChatCommand(editBox, command, ...)
 end
 
 function addon:ApplyOnBar(bar, bar_name)
+    if bar == nil or bar_name == nil or (not self:CheckBypass(bar_name)) then
+        return
+    end
     local apply = self.optionValues[bar_name]
-
     if (apply) then
         bar:SetAlpha(addon.optionValues["AlphaMin"])
     else
@@ -469,6 +496,13 @@ function addon:ApplyOnBar(bar, bar_name)
     end
 end
 
+--- Create checkbox for an action bar to active the mouseover settings
+---@param parent any In-game option window
+---@param name any Bar name
+---@param title any Check box text
+---@param x any Position on setting window x axis
+---@param y any Position on setting window y axis
+---@param default any 
 function addon:CreateButton(parent, name, title, x, y, default)
     if default == nil then
         default = true
@@ -492,18 +526,25 @@ function addon:CreateButton(parent, name, title, x, y, default)
     return cb
 end
 
+--- Create a section in the setting window
+---@param parent any In-game option window
+---@param name any 
+---@param title any Section name
+---@param y any Position on setting window y axis
 function addon:CreateHeader(parent, name, title, y)
     local header = parent:CreateFontString("ARTWORK", nil, "GameFontNormalLarge")
     header:SetPoint("TOP", -20, y)
     header:SetText(title)
     local line = parent:CreateTexture()
     line:SetTexture("Interface/BUTTONS/WHITE8X8")
-    line:SetColorTexture(255, 255, 255, 1)
-    line:SetSize(675, 0.8)
-    line:SetPoint("TOP", -7, y - 17)
+    line:SetColorTexture(255, 255, 255, 0.4)
+    line:SetSize(630, 0.6)
+    line:SetPoint("TOP", -7, y - 23)
     return header
 end
 
+--- Round a value to the nearest percentile
+---@param value any Sliders values
 function addon:RoundToNearestPercentile(value)
     local value = value * 100
     local remain = math.fmod(value, 1)
@@ -515,6 +556,14 @@ function addon:RoundToNearestPercentile(value)
     return value / 100
 end
 
+--- Create a slider in the setting window
+---@param parent any In-game option window
+---@param name any 
+---@param title any Slider name
+---@param x any Position on setting window x axis
+---@param y any Position on setting window y axis
+---@param suffix any 
+---@param default any
 function addon:CreateSlider(parent, name, title, x, y, suffix, default)
     if suffix == nil then
         suffix = ""
@@ -551,36 +600,34 @@ function addon:CreateSlider(parent, name, title, x, y, suffix, default)
             configuration = addon.optionValues
         })
         addon:ComputeValues()
-        -- TODO Loop on every action bars
-        -- addon:ApplyOnBar(addon.bars[name], name)
+        for _, bar_name in pairs(addon.bar_names) do
+            addon:ApplyOnBar(addon.bars[bar_name], bar_name)
+        end
     end
     slider:SetScript("OnValueChanged", self.OnSliderValueChanged)
     return slider
 end
 
+--- Create the in-game addon option window
 function addon:CreateConfigPanel()
     local panel = CreateFrame("Frame")
-    panel.name = "BlizzardBars" -- see panel fields
+    panel.name = addonShortName
     InterfaceOptions_AddCategory(panel) -- see InterfaceOptions API
 
-    -- add widgets to the panel as desired
-    local title = panel:CreateFontString("ARTWORK", nil, "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT")
-    title:SetText("Settings")
-
-    self:CreateHeader(panel, "ActionBars", "Action Bars", -25)
+    self:CreateHeader(panel, "ActionBars", "Action Bars", -10)
 
     -- Button to activate/deactivate mouseover
     self:CreateButton(panel, "MainMenuBar", "Action Bar 1", 20, -50)
     self:CreateButton(panel, "MultiBarBottomLeft", "Action Bar 2", 193, -50)
     self:CreateButton(panel, "MultiBarBottomRight", "Action Bar 3", 366, -50)
     self:CreateButton(panel, "MultiBarRight", "Action Bar 4", 540, -50)
-    self:CreateButton(panel, "MultiBarLeft", "Action Bar 5", 20, -110)
-    self:CreateButton(panel, "MultiBar5", "Action Bar 6", 193, -110)
-    self:CreateButton(panel, "MultiBar6", "Action Bar 7", 366, -110)
-    self:CreateButton(panel, "MultiBar7", "Action Bar 8", 540, -110)
-    self:CreateButton(panel, "StanceBar", "Stance Bar", 20, -170)
-    self:CreateButton(panel, "PetBar", "Pet Action Bar", 193, -170)
+    self:CreateButton(panel, "MultiBarLeft", "Action Bar 5", 20, -85)
+    self:CreateButton(panel, "MultiBar5", "Action Bar 6", 193, -85)
+    self:CreateButton(panel, "MultiBar6", "Action Bar 7", 366, -85)
+    self:CreateButton(panel, "MultiBar7", "Action Bar 8", 540, -85)
+    self:CreateButton(panel, "StanceBar", "Stance Bar", 20, -120)
+    self:CreateButton(panel, "PetActionBar", "Pet Action Bar", 193, -120)
+    self:CreateButton(panel, "LinkActionBars", "Link Action Bars", 20, -165)
 
     self:CreateHeader(panel, "FadeInTimes", "Fade in times", -210)
 
@@ -592,7 +639,7 @@ function addon:CreateConfigPanel()
     self:CreateSlider(panel, "FadeOutDelay", "Fade out delay", 20, -350, "s")
     self:CreateSlider(panel, "FadeOutDuration", "Fade out duration", 360, -350, "s")
 
-    self:CreateHeader(panel, "Alphas", "Aphas", -390)
+    self:CreateHeader(panel, "Alphas", "Alphas", -390)
 
     self:CreateSlider(panel, "AlphaMin", "Minimum Alpha", 20, -440)
     self:CreateSlider(panel, "AlphaMax", "Maximum Alpha", 360, -440)
@@ -631,12 +678,17 @@ function addon:OnInit()
     -- this needs a manual insert, since otherwise this button is never visible
     -- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
     table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
+    -- Check current state
+    self:Dragonriding()
     -- Compute option internal values
     self:ComputeValues()
     -- Initialize Blizzard options panel
     self:CreateConfigPanel()
     -- Chat commands
     self:RegisterChatCommand('bbm')
+    self:RegisterChatCommand('bbc', function()
+        InterfaceOptionsFrame_OpenToCategory(addonShortName)
+    end)
 end
 
 -- Enabling.
@@ -723,11 +775,11 @@ end
     -- and will default to the addon folder itself if not.
     -- Note that we cannot check for file or folder existence
     -- from within the WoW API, so you must make sure this is correct.
-    function addon:GetMedia(name, type)
+    function addon:GetMedia(name, transition)
         if (Path) then
-            return ([[Interface\AddOns\%s\%s\%s.%s]]):format(addonName, Path, name, type or "tga")
+            return ([[Interface\AddOns\%s\%s\%s.%s]]):format(addonName, Path, name, transition or "tga")
         else
-            return ([[Interface\AddOns\%s\%s.%s]]):format(addonName, name, type or "tga")
+            return ([[Interface\AddOns\%s\%s.%s]]):format(addonName, name, transition or "tga")
         end
     end
 
@@ -899,7 +951,7 @@ end
         -- to the addon namespace's event handler.
         -- Note that you can always register more ADDON_LOADED
         -- if you wish to listen for other addons loading.
-        if (addon[event] and type(addon[event]) == "function") then
+        if (addon[event] and transition(addon[event]) == "function") then
             addon[event](...)
         else
             if (addon.OnEvent) then

@@ -4,9 +4,6 @@
 
 Does what the title says. _Taintless, fast, and small!_
 
-Currently, you can decide whether to show the pet bar or not. Everything else is
-always mouseover.
-
 Bars become and stay visible under the following conditions:
 
 - Mouseover
@@ -19,6 +16,7 @@ Bars become and stay visible under the following conditions:
 
 - `/bbm pet [on|off]`: Toggle pet bar mouseover. No argument will toggle the bar.
 - `/bbm toggle`: Make all bars visible temporarily (until /reload or the next toggle)
+- `/bbc`: Open the addon configuration panel.
 
 ## Support & Connect
 
