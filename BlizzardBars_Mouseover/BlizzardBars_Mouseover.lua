@@ -163,13 +163,13 @@ end
 ---@param bar_name string Name of the base frame
 function addon:SecureHook(frame, bar, bar_name)
     frame:HookScript("OnEnter", function()
-        if (addon.enabled and addon:CheckBypass(bar_name)) then
+        if addon.enabled then
             addon:FadeBar("FadeIn", bar, bar_name)
         end
     end)
 
     frame:HookScript("OnLeave", function()
-        if (addon.enabled and addon:CheckBypass(bar_name)) then
+        if addon.enabled then
             addon:FadeBar("FadeOut", bar, bar_name)
         end
     end)
@@ -181,7 +181,7 @@ function addon:FadeBar(transition, bar, bar_name)
         bar_collection = self.bar_names
     end
     for _, bar_name in pairs(bar_collection) do
-        if self.optionValues[bar_name] then
+        if self.optionValues[bar_name] and self:CheckBypass(bar_name) then
             bar = self.bars[bar_name]
             addon:CancelTimer(bar_name)
             if transition == "FadeOut" then
@@ -486,7 +486,9 @@ end
 
 function addon:ApplyOnBar(bar, bar_name)
     if bar == nil or bar_name == nil or (not self:CheckBypass(bar_name)) then
-        if bar ~= nil then bar:SetAlpha(1) end
+        if bar ~= nil then
+            bar:SetAlpha(1)
+        end
         return
     end
     local apply = self.optionValues[bar_name]
