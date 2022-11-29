@@ -338,7 +338,7 @@ function addon:Dragonriding()
     elseif (not IsMounted() and self.dragonriding) then
         -- if we were dragonriding and stopped, hide everything again
         self.dragonriding = false
-        self.bars[MAIN_BAR]:SetAlpha(0)
+        self:ApplyOnBar(self.bars[MAIN_BAR], MAIN_BAR)
     end
 end
 
