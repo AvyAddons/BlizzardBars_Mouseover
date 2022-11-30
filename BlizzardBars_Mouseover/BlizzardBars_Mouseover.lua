@@ -335,7 +335,8 @@ function addon:Dragonriding()
         self.dragonriding = true
         -- show main bar
         self.bars[MAIN_BAR]:SetAlpha(1)
-    elseif (not IsMounted() and self.dragonriding) then
+    elseif self.dragonriding then
+        -- elseif (not IsMounted() and self.dragonriding) then
         -- if we were dragonriding and stopped, hide everything again
         self.dragonriding = false
         self:ApplyOnBar(self.bars[MAIN_BAR], MAIN_BAR)
@@ -681,8 +682,6 @@ function addon:OnInit()
     -- this needs a manual insert, since otherwise this button is never visible
     -- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
     table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
-    -- Check current state
-    self:Dragonriding()
     -- Compute option internal values
     self:ComputeValues()
     -- Initialize Blizzard options panel
@@ -734,8 +733,11 @@ function addon:OnEnable()
         addon:HandleFlyoutHide()
     end)
 
-    -- initialize the mouseover shindigs
-    self:HookBars()
+    -- Initialize bindings after a short delay to allow for DragonRiding() to get the proper values (i.e. HasBonusActionBar())
+    C_TimerAfter(0.05, function()
+        self:Dragonriding()
+        self:HookBars()
+    end)
 end
 
 -- Setup the environment
