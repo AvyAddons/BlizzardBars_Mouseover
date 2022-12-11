@@ -12,6 +12,7 @@ local math_fmod = math.fmod
 -- WoW API
 -----------------------------------------------------------
 -- Up-value any WoW functions used here.
+---@type function
 local InterfaceOptions_AddCategory = _G.InterfaceOptions_AddCategory
 
 -- Your default settings.
@@ -22,9 +23,8 @@ local InterfaceOptions_AddCategory = _G.InterfaceOptions_AddCategory
 -- * You should access saved settings by using `db[key]`
 -- * Don't put frame handles or other widget references in here,
 --   just strings, numbers, and booleans. Tables also work.
-
---- Configuration option values
-addon.options = {
+addon.db = {
+    -- Put your default settings here
     MainMenuBar = true,
     MultiBarBottomLeft = true,
     MultiBarBottomRight = true,
@@ -51,12 +51,14 @@ addon.computedOptions = {
     FadeOutAlphaStep = 0.1,
 }
 
-addon.db = (function(db) _G[addonName .. "_DB"] = db; return db end)({
-	-- Put your default settings here
-	pet_bar_ignore = false,
-    configuration = addon.options
-})
-
+--- Updates the existing DB when chaging option names.
+--- Assume addon.db refences the saved variables table already.
+function addon:MigrateDB()
+    if (addon.db["pet_bar_ignore"] ~= nil) then
+        addon.db.PetActionBar = addon.db.pet_bar_ignore
+        addon.db.pet_bar_ignore = nil
+    end
+end
 
 -- Addon API
 -----------------------------------------------------------
@@ -78,10 +80,10 @@ end
 
 --- Compute option values
 function addon:ComputeValues()
-    local alphaRange = math_abs(self.options["AlphaMax"] - self.options["AlphaMin"])
+    local alphaRange = math_abs(self.db["AlphaMax"] - self.db["AlphaMin"])
     self.computedOptions = {
-        FadeInAlphaStep = alphaRange / (self.options["FadeInDuration"] / self.options["MaxRefreshRate"]),
-        FadeOutAlphaStep = alphaRange / (self.options["FadeOutDuration"] / self.options["MaxRefreshRate"])
+        FadeInAlphaStep = alphaRange / (self.db["FadeInDuration"] / self.db["MaxRefreshRate"]),
+        FadeOutAlphaStep = alphaRange / (self.db["FadeOutDuration"] / self.db["MaxRefreshRate"])
     }
 end
 
@@ -98,14 +100,14 @@ function addon:CreateButton(parent, name, title, x, y, default)
     self = cb
     cb:SetPoint("TOPLEFT", x, y)
     cb.Text:SetText(title)
-    if addon.options[name] ~= nil then
-        default = addon.options[name]
+    if addon.db[name] ~= nil then
+        default = addon.db[name]
     end
     cb:SetChecked(default)
     function self:OnCheckBoxClicked()
-        addon.options[name] = self:GetChecked()
+        addon.db[name] = self:GetChecked()
         addon:SaveToDB({
-            configuration = addon.options
+            configuration = addon.db
         })
         addon:ApplyOnBar(addon.bars[name], name)
     end
@@ -169,8 +171,8 @@ function addon:CreateSlider(parent, name, title, x, y, suffix, default)
     getglobal(name .. "High"):SetText("1" .. suffix)
     slider:SetPoint("TOPLEFT", x, y)
     slider:SetMinMaxValues(0, 1)
-    if addon.options[name] ~= nil then
-        default = addon.options[name]
+    if addon.db[name] ~= nil then
+        default = addon.db[name]
     end
     slider.Text:SetText(title .. " (" .. default .. suffix .. ")")
     slider:SetValue(default)
@@ -183,9 +185,9 @@ function addon:CreateSlider(parent, name, title, x, y, suffix, default)
         end
         self.currentValue = roundValue
         self.Text:SetText(title .. " (" .. roundValue .. suffix .. ")")
-        addon.options[name] = roundValue
+        addon.db[name] = roundValue
         addon:SaveToDB({
-            configuration = addon.options
+            configuration = addon.db
         })
         addon:ComputeValues()
         for _, bar_name in pairs(addon.bar_names) do

@@ -30,6 +30,7 @@ local QuickKeybindFrame = _G["QuickKeybindFrame"]
 local EditModeManagerFrame = _G["EditModeManagerFrame"]
 ---@type Frame
 local SpellFlyout = _G["SpellFlyout"]
+---@type function
 local InterfaceOptionsFrame_OpenToCategory = _G.InterfaceOptionsFrame_OpenToCategory
 
 -- Constants
@@ -49,13 +50,13 @@ local PET_ACTION_BUTTON = "PetActionButton"
 ---@return table timer The timer table
 function addon:Timer(fn, delay, every)
     -- C_TimerAfter doesn't allow anything below
-	if delay < 0.01 then delay = 0.01 end
+    if delay < 0.01 then delay = 0.01 end
 
     local timer = {
         delay = delay,
         fn = fn,
         ends = GetTime() + delay,
-		cancelled = false,
+        cancelled = false,
     }
 
     timer.callback = function()
@@ -69,11 +70,11 @@ function addon:Timer(fn, delay, every)
     return timer
 end
 
----Cancel a timer by the bar name
+--- Cancel a timer by the bar name
 ---@param bar_name string
 function addon:CancelTimer(bar_name)
     local timer = self.timers[bar_name]
-	if timer then timer.cancelled = true end
+    if timer then timer.cancelled = true end
 end
 
 function addon:CancelAllTimers()
@@ -82,22 +83,16 @@ function addon:CancelAllTimers()
     end
 end
 
-local function indexOf(array, value)
-    for i, v in ipairs(array) do
-        if v == value then
-            return i
-        end
-    end
-    return nil
-end
-
 function addon:GetFlyoutParent()
     if (SpellFlyout:IsShown()) then
         local parent = SpellFlyout:GetParent()
         local parent_name = parent:GetName() or ""
         if (string_find(parent_name, "([Bb]utton)%d")) then
-            local index = indexOf(self.button_names, string_gsub(parent_name, "%d", ""))
-			if (index) then return self.bar_names[index] end
+            local index = (function(array, value)
+                for i, v in ipairs(array) do if v == value then return i end end
+                return nil
+            end)(self.button_names, string_gsub(parent_name, "%d", ""))
+            if (index) then return self.bar_names[index] end
         end
     end
     return nil
@@ -112,9 +107,24 @@ function addon:CheckBypass(bar_name)
     -- if we're dragonriding and this is the main bar, bypass the function
     local dragonridingBypass = (self.dragonriding and bar_name == MAIN_BAR)
     -- ad-hoc bypass of any given bar
-    local adHocBypass = (self.bypass == bar_name or addon.options[bar_name] == false)
+    local adHocBypass = (self.bypass == bar_name or addon.db[bar_name] == false)
 
     return not (dragonridingBypass or adHocBypass)
+end
+
+---Apply alpha to a given bar
+---@param bar Frame
+---@param bar_name string
+function addon:ApplyOnBar(bar, bar_name)
+    if bar ~= nil and (bar_name == nil or (not self:CheckBypass(bar_name))) then
+        bar:SetAlpha(1)
+        return
+    end
+    if (self.db[bar_name]) then
+        bar:SetAlpha(addon.db["AlphaMin"])
+    else
+        bar:SetAlpha(1)
+    end
 end
 
 --- Securely hooks into a frame's OnEnter and OnLeave to show/hide.
@@ -137,11 +147,11 @@ end
 
 function addon:FadeBar(transition, bar, bar_name)
     local bar_collection = { bar_name }
-    if self.options["LinkActionBars"] then
+    if self.db["LinkActionBars"] then
         bar_collection = self.bar_names
     end
     for _, bar_name in pairs(bar_collection) do
-        if self.options[bar_name] and self:CheckBypass(bar_name) then
+        if self.db[bar_name] and self:CheckBypass(bar_name) then
             bar = self.bars[bar_name]
             addon:CancelTimer(bar_name)
             if transition == "FadeOut" then
@@ -161,18 +171,18 @@ end
 function addon:FadeInBarTimer(bar, bar_name)
     local alpha = addon.fades[bar_name]
     if alpha == nil then
-        alpha = addon.options["AlphaMin"]
+        alpha = addon.db["AlphaMin"]
         addon.fades[bar_name] = alpha
     end
     local timer = addon:Timer(function()
         alpha = alpha + addon.computedOptions["FadeInAlphaStep"]
-        if alpha >= addon.options["AlphaMax"] then
+        if alpha >= addon.db["AlphaMax"] then
             addon:CancelTimer(bar_name)
-            alpha = addon.options["AlphaMax"]
+            alpha = addon.db["AlphaMax"]
         end
         addon.fades[bar_name] = alpha
         bar:SetAlpha(alpha)
-    end, (addon.options["FadeInDelay"] or 0), addon.options["MaxRefreshRate"])
+    end, (addon.db["FadeInDelay"] or 0), addon.db["MaxRefreshRate"])
     return timer
 end
 
@@ -182,18 +192,18 @@ end
 function addon:FadeOutBarTimer(bar, bar_name)
     local alpha = addon.fades[bar_name]
     if alpha == nil then
-        alpha = addon.options["AlphaMax"]
+        alpha = addon.db["AlphaMax"]
         addon.fades[bar_name] = alpha
     end
     local timer = addon:Timer(function()
         alpha = alpha - addon.computedOptions["FadeOutAlphaStep"]
-        if alpha <= addon.options["AlphaMin"] then
+        if alpha <= addon.db["AlphaMin"] then
             addon:CancelTimer(bar_name)
-            alpha = addon.options["AlphaMin"]
+            alpha = addon.db["AlphaMin"]
         end
         addon.fades[bar_name] = alpha
         bar:SetAlpha(alpha)
-    end, (addon.options["FadeOutDelay"] or 0), addon.options["MaxRefreshRate"])
+    end, (addon.db["FadeOutDelay"] or 0), addon.db["MaxRefreshRate"])
     return timer
 end
 
@@ -225,7 +235,7 @@ end
 ---@param cooldown Cooldown
 ---@param flag boolean
 function addon:SetBling(cooldown, flag)
-	if not cooldown then return end
+    if not cooldown then return end
     cooldown:SetDrawBling(flag)
 end
 
@@ -233,7 +243,7 @@ end
 ---@param bar_name string
 ---@param flag boolean
 function addon:SetBlingRender(bar_name, flag)
-	if not self.buttons[bar_name] then return end
+    if not self.buttons[bar_name] then return end
     for _, button in ipairs(self.buttons[bar_name]) do
         self:SetBling(button.cooldown, flag)
     end
@@ -281,7 +291,7 @@ function addon:ToggleBars()
     end
 end
 
---- Show main vehicle bar
+--- Show main vehicle bar when dragonriding
 function addon:Dragonriding()
     if (not self.enabled) then
         return
@@ -301,7 +311,7 @@ end
 
 function addon:HandleFlyoutShow()
     -- ignore when bypass enabled
-	if (not self.enabled) then return end
+    if (not self.enabled) then return end
     -- this returns nil if the parent isn't one of the bars we're hiding
     self.bypass = self:GetFlyoutParent()
     self:CancelTimer(self.bypass)
@@ -310,7 +320,7 @@ end
 
 function addon:HandleFlyoutHide()
     -- ignore when bypass enabled
-	if (not self.enabled) then return end
+    if (not self.enabled) then return end
     local prev_bypass = self.bypass
     if (prev_bypass) then
         self.bypass = nil
@@ -353,26 +363,26 @@ addon.fades = {}
 addon.bars = {}
 addon.buttons = {}
 addon.bar_names = {
-	MAIN_BAR,
-	"MultiBarBottomLeft",
-	"MultiBarBottomRight",
-	"MultiBarRight",
-	"MultiBarLeft",
-	"MultiBar5",
-	"MultiBar6",
-	"MultiBar7",
-	"StanceBar",
+    MAIN_BAR,
+    "MultiBarBottomLeft",
+    "MultiBarBottomRight",
+    "MultiBarRight",
+    "MultiBarLeft",
+    "MultiBar5",
+    "MultiBar6",
+    "MultiBar7",
+    "StanceBar",
 }
 addon.button_names = {
-	"ActionButton",
-	"MultiBarBottomLeftButton",
-	"MultiBarBottomRightButton",
-	"MultiBarRightButton",
-	"MultiBarLeftButton",
-	"MultiBar5Button",
-	"MultiBar6Button",
-	"MultiBar7Button",
-	"StanceButton",
+    "ActionButton",
+    "MultiBarBottomLeftButton",
+    "MultiBarBottomRightButton",
+    "MultiBarRightButton",
+    "MultiBarLeftButton",
+    "MultiBar5Button",
+    "MultiBar6Button",
+    "MultiBar7Button",
+    "StanceButton",
 }
 
 -- these are bypasses and control hover callbacks
@@ -387,6 +397,7 @@ addon.bypass = nil
 
 -- Addon Core
 -----------------------------------------------------------
+
 -- Your event handler.
 -- Any events you add should be handled here.
 --- @param event WowEvent The name of the event that fired.
@@ -406,8 +417,17 @@ end
 ---@param command string The name of the slash command type in.
 ---@param ... string Any additional arguments passed to your command, all as strings.
 function addon:OnChatCommand(editBox, command, ...)
+    function PrintCommands()
+        addon:Print([[Available commands:
+        - |cff24acf2/bbm|r: Opens the configuration panel
+        - |cff24acf2/bbm config|r: Opens the configuration panel
+        - |cff24acf2/bbm toggle|r: Make all bars visible temporarily (until /reload or the next toggle)
+        - |cff24acf2/bbm help|r: Displays a list of commands
+        ]])
+    end
+
     local arg1, arg2 = ...
-    if (not arg1) then
+    if (not arg1 or arg1 == "") then
         InterfaceOptionsFrame_OpenToCategory(addon.shortName)
     elseif (arg1 == "config") then
         InterfaceOptionsFrame_OpenToCategory(addon.shortName)
@@ -423,24 +443,10 @@ function addon:OnChatCommand(editBox, command, ...)
         end
         self:PetBarHandler(flag)
     elseif (arg1 == "help") then
-        -- TODO: print commands
+        PrintCommands()
     else
-        -- TODO: error message, print commands
-    end
-end
-
-function addon:ApplyOnBar(bar, bar_name)
-    if bar == nil or bar_name == nil or (not self:CheckBypass(bar_name)) then
-        if bar ~= nil then
-            bar:SetAlpha(1)
-        end
-        return
-    end
-    local apply = self.options[bar_name]
-    if (apply) then
-        bar:SetAlpha(addon.options["AlphaMin"])
-    else
-        bar:SetAlpha(1)
+        self:Print("Command not recognized.")
+        PrintCommands()
     end
 end
 
@@ -496,17 +502,17 @@ function addon:OnEnable()
 
     -- in Quick Keybind mode, we wanna show bars
     -- https://www.townlong-yak.com/framexml/live/BindingUtil.lua#164
-	QuickKeybindFrame:HookScript("OnShow", function() addon:ShowBars() end)
-	QuickKeybindFrame:HookScript("OnHide", function() addon:HideBars() end)
+    QuickKeybindFrame:HookScript("OnShow", function() addon:ShowBars() end)
+    QuickKeybindFrame:HookScript("OnHide", function() addon:HideBars() end)
 
     -- Same thing for Edit Mode
     -- These cause a small hicup if we call it instantly. So a tiny delay fixes that
-	EditModeManagerFrame:HookScript("OnShow", function() C_TimerAfter(0.05, function() addon:ShowBars() end) end)
-	EditModeManagerFrame:HookScript("OnHide", function() C_TimerAfter(0.05, function() addon:HideBars() end) end)
+    EditModeManagerFrame:HookScript("OnShow", function() C_TimerAfter(0.05, function() addon:ShowBars() end) end)
+    EditModeManagerFrame:HookScript("OnHide", function() C_TimerAfter(0.05, function() addon:HideBars() end) end)
 
     -- Flyouts are more complicated, but we wanna show the parent bar while they're open
-	SpellFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow() end)
-	SpellFlyout:HookScript("OnHide", function() addon:HandleFlyoutHide() end)
+    SpellFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow() end)
+    SpellFlyout:HookScript("OnHide", function() addon:HandleFlyoutHide() end)
 
     -- Initialize bindings after a short delay to allow for DragonRiding() to get the proper values (i.e. HasBonusActionBar())
     C_TimerAfter(0.05, function()

@@ -23,6 +23,8 @@ local GetNumAddOns = _G.GetNumAddOns
 local GetAddOnEnableState = _G.GetAddOnEnableState
 
 -- Setup the environment
+-- This file should run last, as some values here depend on the existance of
+-- some tables.
 -----------------------------------------------------------
 addon.eventFrame = CreateFrame("Frame", addonName .. "EventFrame", UIParent)
 
@@ -178,7 +180,14 @@ addon.eventFrame:SetScript("OnEvent", function(self, event, ...)
             -- addon namespace methods.
             addon.eventFrame:UnregisterEvent("ADDON_LOADED")
             -- Initialize our saved variables, or use defaults if empty
-            addon.db = _G[addonName .. "_DB"] or addon.db
+            if (type(_G[addonName .. "_DB"]) ~= "table") then _G[addonName .. "_DB"] = {} end
+            local db = _G[addonName .. "_DB"]
+            for key in pairs(addon.db) do
+                --  If our option is not present, set default value
+                if (db[key] == nil) then db[key] = addon.db[key] end
+            end
+            -- Update our reference so that changed options are saved on logout
+            addon.db = db
             -- Call the initialization method.
             if (addon.OnInit) then
                 addon:OnInit()
