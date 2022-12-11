@@ -116,7 +116,8 @@ end
 ---@param bar Frame
 ---@param bar_name string
 function addon:ApplyOnBar(bar, bar_name)
-    if bar ~= nil and (bar_name == nil or (not self:CheckBypass(bar_name))) then
+    if (bar == nil) then return end
+    if (bar_name == nil or (not self:CheckBypass(bar_name))) then
         bar:SetAlpha(1)
         return
     end
