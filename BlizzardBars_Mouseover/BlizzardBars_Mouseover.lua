@@ -1,15 +1,15 @@
 -- Retrieve addon folder name, and our local, private namespace.
----@transition string, table
+---@type string, table
 local addonName, addon = ...
 local addonShortName = "BlizzardBars"
 
 -- Fetch the localization table
----@transition table<string, string>
+---@type table<string, string>
 local L = addon.L
 
---[==[@debug@
+--@debug@
 _G[addonName] = addon
---@end-debug@]==]
+--@end-debug@
 
 -- Lua API
 -----------------------------------------------------------
@@ -33,11 +33,11 @@ local GetNumAddOns = _G.GetNumAddOns
 local GetAddOnEnableState = _G.GetAddOnEnableState
 local GetTime = _G.GetTime
 local C_TimerAfter = _G.C_Timer.After
----@transition Frame
+---@type Frame
 local QuickKeybindFrame = _G["QuickKeybindFrame"]
----@transition Frame
+---@type Frame
 local EditModeManagerFrame = _G["EditModeManagerFrame"]
----@transition Frame
+---@type Frame
 local SpellFlyout = _G["SpellFlyout"]
 
 -- Constants
@@ -62,27 +62,23 @@ local PET_ACTION_BUTTON = "PetActionButton"
 --- Fires a callback after `delay` seconds has passed.
 ---@param fn function Void callback
 ---@param delay number Delay in seconds
----@param every number repeat Every in seconds
+---@param every number|nil repeat Every in seconds
 ---@return table timer The timer table
 function addon:Timer(fn, delay, every)
     -- C_TimerAfter doesn't allow anything below
-    if delay < 0.01 then
-        delay = 0.01
-    end
+	if delay < 0.01 then delay = 0.01 end
 
     local timer = {
         delay = delay,
         fn = fn,
         ends = GetTime() + delay,
-        cancelled = false
+		cancelled = false,
     }
 
     timer.callback = function()
         if not timer.cancelled then
             timer.fn()
-            if every ~= nil then
-                C_TimerAfter(every, timer.callback)
-            end
+            if every ~= nil then C_TimerAfter(every, timer.callback) end
         end
     end
 
@@ -94,9 +90,7 @@ end
 ---@param bar_name string
 function addon:CancelTimer(bar_name)
     local timer = self.timers[bar_name]
-    if timer then
-        timer.cancelled = true
-    end
+	if timer then timer.cancelled = true end
 end
 
 function addon:CancelAllTimers()
@@ -120,9 +114,7 @@ function addon:GetFlyoutParent()
         local parent_name = parent:GetName() or ""
         if (string_find(parent_name, "([Bb]utton)%d")) then
             local index = indexOf(self.button_names, string_gsub(parent_name, "%d", ""))
-            if (index) then
-                return self.bar_names[index]
-            end
+			if (index) then return self.bar_names[index] end
         end
     end
     return nil
@@ -133,7 +125,7 @@ end
 
 --- Saves table to addon database
 --- Remarks; it merges existing data with updated data and updates addon.db
----@param : any
+---@param values table
 function addon:SaveToDB(values)
     local currentValues = _G[addonName .. "_DB"]
     if currentValues == nil then
@@ -147,7 +139,7 @@ function addon:SaveToDB(values)
 end
 
 --- Bypass transformation for specific bars
----@param bar_name any
+---@param bar_name string
 function addon:CheckBypass(bar_name)
     -- if we're dragonriding and this is the main bar, bypass the function
     local dragonridingBypass = (self.dragonriding and bar_name == MAIN_BAR)
@@ -265,9 +257,7 @@ end
 ---@param cooldown Cooldown
 ---@param flag boolean
 function addon:SetBling(cooldown, flag)
-    if not cooldown then
-        return
-    end
+	if not cooldown then return end
     cooldown:SetDrawBling(flag)
 end
 
@@ -275,9 +265,7 @@ end
 ---@param bar_name string
 ---@param flag boolean
 function addon:SetBlingRender(bar_name, flag)
-    if not self.buttons[bar_name] then
-        return
-    end
+	if not self.buttons[bar_name] then return end
     for _, button in ipairs(self.buttons[bar_name]) do
         self:SetBling(button.cooldown, flag)
     end
@@ -345,9 +333,7 @@ end
 
 function addon:HandleFlyoutShow()
     -- ignore when bypass enabled
-    if (not self.enabled) then
-        return
-    end
+	if (not self.enabled) then return end
     -- this returns nil if the parent isn't one of the bars we're hiding
     self.bypass = self:GetFlyoutParent()
     self:CancelTimer(self.bypass)
@@ -356,9 +342,7 @@ end
 
 function addon:HandleFlyoutHide()
     -- ignore when bypass enabled
-    if (not self.enabled) then
-        return
-    end
+	if (not self.enabled) then return end
     local prev_bypass = self.bypass
     if (prev_bypass) then
         self.bypass = nil
@@ -371,7 +355,7 @@ end
 ---Handles the pet bar chat command
 ---@param flag boolean|string
 function addon:PetBarHandler(flag)
-    if (transition(flag) == string) then
+	if (type(flag) == string) then
         self.db["pet_bar_ignore"] = not self.db["pet_bar_ignore"]
     else
         self.db["pet_bar_ignore"] = flag
@@ -395,14 +379,33 @@ end
 
 -- Addon Tables
 -----------------------------------------------------------
+
 addon.timers = {}
 addon.fades = {}
 addon.bars = {}
 addon.buttons = {}
-addon.bar_names = {MAIN_BAR, "MultiBarBottomLeft", "MultiBarBottomRight", "MultiBarRight", "MultiBarLeft", "MultiBar5",
-                   "MultiBar6", "MultiBar7", "StanceBar"}
-addon.button_names = {"ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", "MultiBarRightButton",
-                      "MultiBarLeftButton", "MultiBar5Button", "MultiBar6Button", "MultiBar7Button", "StanceButton"}
+addon.bar_names = {
+	MAIN_BAR,
+	"MultiBarBottomLeft",
+	"MultiBarBottomRight",
+	"MultiBarRight",
+	"MultiBarLeft",
+	"MultiBar5",
+	"MultiBar6",
+	"MultiBar7",
+	"StanceBar",
+}
+addon.button_names = {
+	"ActionButton",
+	"MultiBarBottomLeftButton",
+	"MultiBarBottomRightButton",
+	"MultiBarRightButton",
+	"MultiBarLeftButton",
+	"MultiBar5Button",
+	"MultiBar6Button",
+	"MultiBar7Button",
+	"StanceButton",
+}
 
 -- these are bypasses and control hover callbacks
 --- Global hover bypass
@@ -410,7 +413,7 @@ addon.enabled = true
 --- Dragonriding hover bypass
 addon.dragonriding = false
 --- Generic bypass, currently in use for flyouts
----@transition string|nil
+---@type string|nil
 addon.bypass = nil
 
 --- Configuration option values
@@ -468,7 +471,7 @@ end
 
 -- Your chat command handler.
 ---@param editBox table|frame The editbox the command was entered into.
----@param command string The name of the slash command transition in.
+---@param command string The name of the slash command type in.
 ---@param ... string Any additional arguments passed to your command, all as strings.
 function addon:OnChatCommand(editBox, command, ...)
     local arg1, arg2 = ...
@@ -705,33 +708,17 @@ function addon:OnEnable()
 
     -- in Quick Keybind mode, we wanna show bars
     -- https://www.townlong-yak.com/framexml/live/BindingUtil.lua#164
-    QuickKeybindFrame:HookScript("OnShow", function()
-        addon:ShowBars()
-    end)
-    QuickKeybindFrame:HookScript("OnHide", function()
-        addon:HideBars()
-    end)
+	QuickKeybindFrame:HookScript("OnShow", function() addon:ShowBars() end)
+	QuickKeybindFrame:HookScript("OnHide", function() addon:HideBars() end)
 
     -- Same thing for Edit Mode
     -- These cause a small hicup if we call it instantly. So a tiny delay fixes that
-    EditModeManagerFrame:HookScript("OnShow", function()
-        C_TimerAfter(0.05, function()
-            addon:ShowBars()
-        end)
-    end)
-    EditModeManagerFrame:HookScript("OnHide", function()
-        C_TimerAfter(0.05, function()
-            addon:HideBars()
-        end)
-    end)
+	EditModeManagerFrame:HookScript("OnShow", function() C_TimerAfter(0.05, function() addon:ShowBars() end) end)
+	EditModeManagerFrame:HookScript("OnHide", function() C_TimerAfter(0.05, function() addon:HideBars() end) end)
 
     -- Flyouts are more complicated, but we wanna show the parent bar while they're open
-    SpellFlyout:HookScript("OnShow", function()
-        addon:HandleFlyoutShow()
-    end)
-    SpellFlyout:HookScript("OnHide", function()
-        addon:HandleFlyoutHide()
-    end)
+	SpellFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow() end)
+	SpellFlyout:HookScript("OnHide", function() addon:HandleFlyoutHide() end)
 
     -- Initialize bindings after a short delay to allow for DragonRiding() to get the proper values (i.e. HasBonusActionBar())
     C_TimerAfter(0.05, function()
