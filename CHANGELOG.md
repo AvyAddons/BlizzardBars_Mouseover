@@ -4,9 +4,19 @@ All notable changes to this project will be documented in this file. Be aware th
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased] 2022-11-19
+## [2.0.0] 2022-12-11
 ### Added
-- New command to toggle edit mode: `/em`
+- Configuration panel (#1)
+- Fade-in and fade-out for a smooth transition (#1)
+- Option to link all bars
+
+### Removed
+- Chat command for pets: `/bbm pet` (now as a setting)
+
+### Fixed
+- Resolved some Dragonriding issues where the bars wouldn't show
+
+Many thanks to @Bulbistan and @Tcheetox for their contributions in this release!
 
 ## [1.3.0] 2022-11-20
 ### Added
