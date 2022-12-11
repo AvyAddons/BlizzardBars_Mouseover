@@ -2,9 +2,9 @@
 
 ## Title: BlizzardBars_Mouseover
 ## Notes: Hides the default Blizzard bars, shows them on mouseover.
-## Author: Avyiel
-## Version: @project-version@
-## X-Date: @project-date-iso@
+## Author: Avyiel, Bulbistan, Tcheetox
+## Version: v2.0.0
+## X-Date: 2022-11-26T18:00:00Z
 
 ## DefaultState: Enabled
 ## SavedVariables: BlizzardBars_Mouseover_DB
@@ -17,7 +17,3 @@
 
 Localization.lua
 BlizzardBars_Mouseover.lua
-
-#@debug@
-## Version: DEV
-#@end-debug@
