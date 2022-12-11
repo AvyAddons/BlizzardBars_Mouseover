@@ -17,7 +17,9 @@
 ## X-Wago-ID: VBNB7L6x
 
 Localization.lua
-BlizzardBars_Mouseover.lua
+Core.lua
+Config.lua
+Environment.lua
 
 #@debug@
 ## Version: DEV

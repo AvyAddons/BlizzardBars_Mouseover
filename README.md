@@ -13,9 +13,11 @@ Bars become and stay visible under the following conditions:
 
 ## Chat Commands
 
-- `/bbm pet [on|off]`: Toggle pet bar mouseover. No argument will toggle the bar.
+- `/bbm`: Opens the configuration panel
+- `/bbm config`: Opens the configuration panel
 - `/bbm toggle`: Make all bars visible temporarily (until /reload or the next toggle)
-- `/bbc`: Open the addon configuration panel.
+- `/bbm pet [on|off]`: Toggle pet bar mouseover. No argument will toggle the bar
+- `/bbm help`: Displays a list of commands
 
 ## Contributors
 
