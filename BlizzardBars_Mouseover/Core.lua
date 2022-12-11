@@ -140,6 +140,7 @@ function addon:SecureHook(frame, bar, bar_name)
 
     frame:HookScript("OnLeave", function()
         if addon.enabled then
+            -- FIXME: wait until fade-in is over before fading out
             addon:FadeBar("FadeOut", bar, bar_name)
         end
     end)
