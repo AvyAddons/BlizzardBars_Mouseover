@@ -43,13 +43,12 @@ addon.db = {
     AlphaMin = 0,
     AlphaMax = 1,
     MaxRefreshRate = 0.01,
-}
-
---- Computed option values
-addon.computedOptions = {
     FadeInAlphaStep = 0.1,
     FadeOutAlphaStep = 0.1,
 }
+
+-- Addon API
+-----------------------------------------------------------
 
 --- Updates the existing DB when chaging option names.
 --- Assume addon.db refences the saved variables table already.
@@ -60,69 +59,42 @@ function addon:MigrateDB()
     end
 end
 
--- Addon API
------------------------------------------------------------
-
---- Saves table to addon database
---- Remarks; it merges existing data with updated data and updates addon.db
----@param values table
-function addon:SaveToDB(values)
-    local currentValues = _G[addonName .. "_DB"]
-    if currentValues == nil then
-        currentValues = {}
-    end
-    for k, v in pairs(values) do
-        currentValues[k] = v
-    end
-    _G[addonName .. "_DB"] = currentValues
-    self.db = currentValues
-end
-
 --- Compute option values
 function addon:ComputeValues()
     local alphaRange = math_abs(self.db["AlphaMax"] - self.db["AlphaMin"])
-    self.computedOptions = {
-        FadeInAlphaStep = alphaRange / (self.db["FadeInDuration"] / self.db["MaxRefreshRate"]),
-        FadeOutAlphaStep = alphaRange / (self.db["FadeOutDuration"] / self.db["MaxRefreshRate"])
-    }
+    addon.db.FadeInAlphaStep = alphaRange / (self.db["FadeInDuration"] / self.db["MaxRefreshRate"])
+    addon.db.FadeOutAlphaStep = alphaRange / (self.db["FadeOutDuration"] / self.db["MaxRefreshRate"])
 end
 
 --- Create checkbox for an action bar to active the mouseover settings
----@param parent any In-game option window
----@param name any Bar name
----@param title any Check box text
----@param x any Position on setting window x axis
----@param y any Position on setting window y axis
----@param default any
+---@param parent Frame In-game option window
+---@param name string Bar name
+---@param title string Check box text
+---@param x number Position on setting window x axis
+---@param y number Position on setting window y axis
+---@param default any Default value for this button
 function addon:CreateButton(parent, name, title, x, y, default)
     if default == nil then default = true end
-    local cb = CreateFrame("CheckButton", name, parent, "InterfaceOptionsCheckButtonTemplate")
-    self = cb
+    if addon.db[name] ~= nil then default = addon.db[name] end
+
+    local cb = CreateFrame("CheckButton", name .. "CheckButton_BBM", parent, "InterfaceOptionsCheckButtonTemplate")
     cb:SetPoint("TOPLEFT", x, y)
     cb.Text:SetText(title)
-    if addon.db[name] ~= nil then
-        default = addon.db[name]
-    end
     cb:SetChecked(default)
-    function self:OnCheckBoxClicked()
-        addon.db[name] = self:GetChecked()
-        addon:SaveToDB({
-            configuration = addon.db
-        })
+    cb:SetScript("OnClick", function(this)
+        addon.db[name] = this:GetChecked()
         addon:ApplyOnBar(addon.bars[name], name)
-    end
-
-    cb:SetScript("OnClick", self.OnCheckBoxClicked)
+    end)
     return cb
 end
 
 --- Create a section in the setting window
----@param parent any In-game option window
----@param name any
----@param title any Section name
----@param y any Position on setting window y axis
+---@param parent Frame In-game option window
+---@param name string Font string name
+---@param title string Label text
+---@param y number Position on setting window y axis
 function addon:CreateHeader(parent, name, title, y)
-    local header = parent:CreateFontString("ARTWORK", nil, "GameFontNormalLarge")
+    local header = parent:CreateFontString(name .. "FontString_BBM", "ARTWORK", "GameFontNormalLarge")
     header:SetPoint("TOP", -20, y)
     header:SetText(title)
     local line = parent:CreateTexture()
@@ -147,63 +119,52 @@ function addon:RoundToNearestPercentile(value)
 end
 
 --- Create a slider in the setting window
----@param parent any In-game option window
----@param name any
----@param title any Slider name
----@param x any Position on setting window x axis
----@param y any Position on setting window y axis
----@param suffix any
----@param default any
+---@param parent Frame In-game option window
+---@param name string Slider frame name
+---@param title string Slider label text
+---@param x number Position on setting window x axis
+---@param y number Position on setting window y axis
+---@param suffix string|nil
+---@param default any Default value for this slider
 function addon:CreateSlider(parent, name, title, x, y, suffix, default)
-    if suffix == nil then
-        suffix = ""
-    end
-    if default == nil then
-        default = 0
-    end
-    local slider = CreateFrame("Slider", name, parent, "OptionsSliderTemplate")
-    self = slider
+    if suffix == nil then suffix = "" end
+    if default == nil then default = 0 end
+    if addon.db[name] ~= nil then default = addon.db[name] end
+
+    local slider = CreateFrame("Slider", name .. "Slider_BBM", parent, "OptionsSliderTemplate")
     slider.currentValue = -1
     slider:SetOrientation("HORIZONTAL")
     slider:SetWidth(250)
     slider:SetHeight(15)
-    getglobal(name .. "Low"):SetText("0" .. suffix)
-    getglobal(name .. "High"):SetText("1" .. suffix)
     slider:SetPoint("TOPLEFT", x, y)
+    _G[slider:GetName() .. "Low"]:SetText("0" .. suffix)
+    _G[slider:GetName() .. "High"]:SetText("1" .. suffix)
+    _G[slider:GetName() .. "Text"]:SetText(title .. " (" .. default .. suffix .. ")")
     slider:SetMinMaxValues(0, 1)
-    if addon.db[name] ~= nil then
-        default = addon.db[name]
-    end
-    slider.Text:SetText(title .. " (" .. default .. suffix .. ")")
     slider:SetValue(default)
     slider:SetValueStep(0.05)
     slider:SetObeyStepOnDrag(true)
-    function self:OnSliderValueChanged(value)
+    slider:SetScript("OnValueChanged", function(this, value)
         local roundValue = addon:RoundToNearestPercentile(value)
-        if roundValue == self.currentValue then
+        if roundValue == this.currentValue then
             return
         end
-        self.currentValue = roundValue
-        self.Text:SetText(title .. " (" .. roundValue .. suffix .. ")")
+        this.currentValue = roundValue
+        this.Text:SetText(title .. " (" .. roundValue .. suffix .. ")")
         addon.db[name] = roundValue
-        addon:SaveToDB({
-            configuration = addon.db
-        })
         addon:ComputeValues()
         for _, bar_name in pairs(addon.bar_names) do
             addon:ApplyOnBar(addon.bars[bar_name], bar_name)
         end
-    end
-
-    slider:SetScript("OnValueChanged", self.OnSliderValueChanged)
+    end)
     return slider
 end
 
 --- Create the in-game addon option window
 function addon:CreateConfigPanel()
-    local panel = CreateFrame("Frame")
+    local panel = CreateFrame("Frame", addonName .. "OptionsFrame")
     panel.name = addon.shortName
-    InterfaceOptions_AddCategory(panel) -- see InterfaceOptions API
+    InterfaceOptions_AddCategory(panel)
 
     self:CreateHeader(panel, "ActionBars", "Action Bars", -10)
 
@@ -234,5 +195,4 @@ function addon:CreateConfigPanel()
 
     self:CreateSlider(panel, "AlphaMin", "Minimum Alpha", 20, -440)
     self:CreateSlider(panel, "AlphaMax", "Maximum Alpha", 360, -440)
-
 end

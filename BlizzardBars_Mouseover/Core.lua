@@ -175,7 +175,7 @@ function addon:FadeInBarTimer(bar, bar_name)
         addon.fades[bar_name] = alpha
     end
     local timer = addon:Timer(function()
-        alpha = alpha + addon.computedOptions["FadeInAlphaStep"]
+        alpha = alpha + addon.db.FadeInAlphaStep
         if alpha >= addon.db["AlphaMax"] then
             addon:CancelTimer(bar_name)
             alpha = addon.db["AlphaMax"]
@@ -196,7 +196,7 @@ function addon:FadeOutBarTimer(bar, bar_name)
         addon.fades[bar_name] = alpha
     end
     local timer = addon:Timer(function()
-        alpha = alpha - addon.computedOptions["FadeOutAlphaStep"]
+        alpha = alpha - addon.db.FadeOutAlphaStep
         if alpha <= addon.db["AlphaMin"] then
             addon:CancelTimer(bar_name)
             alpha = addon.db["AlphaMin"]
@@ -330,31 +330,6 @@ function addon:HandleFlyoutHide()
     end
 end
 
----Handles the pet bar chat command
----@param flag boolean|string
-function addon:PetBarHandler(flag)
-	if (type(flag) == string) then
-        self.db["pet_bar_ignore"] = not self.db["pet_bar_ignore"]
-    else
-        self.db["pet_bar_ignore"] = flag
-    end
-    if (self.db["pet_bar_ignore"]) then
-        self:Print("Pet bar mouseover disabled.\nDisabling mouseover requires a /reload before you can see changes!")
-    else
-        self:Print("Pet bar mouseover enabled.")
-        -- prevent multiple toggles from stacking hooks
-        if (not self.bars[PET_BAR]) then
-            self.bars[PET_BAR] = _G[PET_BAR]
-            self.buttons[PET_BAR] = {}
-            for i = 1, 10 do
-                self.buttons[PET_BAR][i] = _G[PET_ACTION_BUTTON .. i]
-            end
-            -- handles adding the callbacks, setting alpha, and disabling cooldown bling
-            self:HookBar(_G[PET_BAR], PET_BAR)
-        end
-    end
-end
-
 -- Addon Tables
 -----------------------------------------------------------
 
@@ -372,6 +347,7 @@ addon.bar_names = {
     "MultiBar6",
     "MultiBar7",
     "StanceBar",
+    PET_BAR,
 }
 addon.button_names = {
     "ActionButton",
@@ -383,6 +359,7 @@ addon.button_names = {
     "MultiBar6Button",
     "MultiBar7Button",
     "StanceButton",
+    PET_ACTION_BUTTON,
 }
 
 -- these are bypasses and control hover callbacks
@@ -433,15 +410,6 @@ function addon:OnChatCommand(editBox, command, ...)
         InterfaceOptionsFrame_OpenToCategory(addon.shortName)
     elseif (arg1 == "toggle") then
         self:ToggleBars()
-    elseif (arg1 == "pet") then
-        ---@type string|boolean
-        local flag = "toggle"
-        if (arg2 and (arg2 == "enabled" or arg2 == "on" or arg2 == 1)) then
-            flag = true
-        elseif (arg2 and (arg2 == "disabled" or arg2 == "off" or arg2 == 0)) then
-            flag = false
-        end
-        self:PetBarHandler(flag)
     elseif (arg1 == "help") then
         PrintCommands()
     else
@@ -453,11 +421,8 @@ end
 -- Initialization.
 -- This fires when the addon and its settings are loaded.
 function addon:OnInit()
-    -- unless ignored, we want them in the list
-    if (not self.db["pet_bar_ignore"]) then
-        table.insert(self.bar_names, PET_BAR)
-        table.insert(self.button_names, PET_ACTION_BUTTON)
-    end
+    -- we sometimes change the options, hence the need to migrate tables
+    self:MigrateDB()
 
     -- we can access Actions Bars via _G[bar]
     -- populate bar references
@@ -482,8 +447,6 @@ function addon:OnInit()
     -- this needs a manual insert, since otherwise this button is never visible
     -- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
     table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
-    -- Compute option internal values
-    self:ComputeValues()
     -- Initialize Blizzard options panel
     self:CreateConfigPanel()
     -- Chat commands
