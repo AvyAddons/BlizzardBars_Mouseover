@@ -61,9 +61,17 @@ end
 
 --- Compute option values
 function addon:ComputeValues()
-    local alphaRange = math_abs(self.db["AlphaMax"] - self.db["AlphaMin"])
-    addon.db.FadeInAlphaStep = alphaRange / (self.db["FadeInDuration"] / self.db["MaxRefreshRate"])
-    addon.db.FadeOutAlphaStep = alphaRange / (self.db["FadeOutDuration"] / self.db["MaxRefreshRate"])
+    local alphaRange = math_abs(self.db.AlphaMax - self.db.AlphaMin)
+    if (self.db.FadeInDuration == 0) then
+        addon.db.FadeInAlphaStep = 1
+    else
+        addon.db.FadeInAlphaStep = alphaRange / (self.db.FadeInDuration / self.db.MaxRefreshRate)
+    end
+    if (self.db.FadeOutDuration == 0) then
+        addon.db.FadeOutAlphaStep = 1
+    else
+        addon.db.FadeOutAlphaStep = alphaRange / (self.db.FadeOutDuration / self.db.MaxRefreshRate)
+    end
 end
 
 --- Create checkbox for an action bar to active the mouseover settings
