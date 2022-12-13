@@ -53,16 +53,17 @@ function addon:Timer(fn, delay, every)
     if delay < 0.01 then delay = 0.01 end
 
     local timer = {
+        name = "",
         delay = delay,
         fn = fn,
-        ends = GetTime() + delay,
         cancelled = false,
     }
 
     timer.callback = function()
         if not timer.cancelled then
             timer.fn()
-            if every ~= nil then C_TimerAfter(every, timer.callback) end
+            if (every == nil and timer.post_call and type(timer.post_call) == "function") then timer.post_call() end
+            if (every ~= nil) then C_TimerAfter(every, timer.callback) end
         end
     end
 
@@ -72,9 +73,11 @@ end
 
 --- Cancel a timer by the bar name
 ---@param bar_name string
-function addon:CancelTimer(bar_name)
+---@param post_call_flag boolean|nil If true, will execute the post-call method
+function addon:CancelTimer(bar_name, post_call_flag)
     local timer = self.timers[bar_name]
     if timer then timer.cancelled = true end
+    if (post_call_flag == true and timer.post_call) then timer.post_call() end
 end
 
 function addon:CancelAllTimers()
@@ -122,7 +125,7 @@ function addon:ApplyOnBar(bar, bar_name)
         return
     end
     if (self.db[bar_name]) then
-        bar:SetAlpha(addon.db["AlphaMin"])
+        bar:SetAlpha(addon.db.AlphaMin)
     else
         bar:SetAlpha(1)
     end
@@ -135,36 +138,48 @@ end
 function addon:SecureHook(frame, bar, bar_name)
     frame:HookScript("OnEnter", function()
         if addon.enabled then
+            -- Always immediately start the fade-in, regardless of a running fade-out
+            addon:CancelTimer(bar_name)
             addon:FadeBar("FadeIn", bar, bar_name)
         end
     end)
 
     frame:HookScript("OnLeave", function()
         if addon.enabled then
-            -- FIXME: wait until fade-in is over before fading out
-            addon:FadeBar("FadeOut", bar, bar_name)
+            local timer = addon.timers[bar_name]
+            if (timer and not timer.cancelled and timer.name == "FadeIn") then
+                timer.post_call = function() addon:FadeBar("FadeOut", bar, bar_name) end
+            else
+                addon:FadeBar("FadeOut", bar, bar_name)
+            end
         end
     end)
 end
 
+---Fades a bar with a given transition
+---@param transition "FadeIn"|"FadeOut"
+---@param bar Frame
+---@param bar_name string
 function addon:FadeBar(transition, bar, bar_name)
-    local bar_collection = { bar_name }
+    --@debug@
+    assert(transition == "FadeIn" or transition == "FadeOut", "Unkown transition")
+    --@end-debug@
+
     if self.db["LinkActionBars"] then
-        bar_collection = self.bar_names
-    end
-    for _, bar_name in pairs(bar_collection) do
-        if self.db[bar_name] and self:CheckBypass(bar_name) then
-            bar = self.bars[bar_name]
-            addon:CancelTimer(bar_name)
-            if transition == "FadeOut" then
-                addon.timers[bar_name] = addon:FadeOutBarTimer(bar, bar_name)
-            elseif transition == "FadeIn" then
-                addon.timers[bar_name] = addon:FadeInBarTimer(bar, bar_name)
-            else
-                error("Transition '" .. transition .. "' not defined")
+        for _, linked_bar_name in ipairs(self.bar_names) do
+            if self.db[linked_bar_name] and self:CheckBypass(linked_bar_name) then
+                local linked_bar = self.bars[linked_bar_name]
+                addon.timers[linked_bar_name] = addon[transition .. "BarTimer"](self, linked_bar, linked_bar_name)
+                addon.timers[linked_bar_name].name = transition
             end
         end
+    else
+        if self.db[bar_name] and self:CheckBypass(bar_name) then
+            addon.timers[bar_name] = addon[transition .. "BarTimer"](self, bar, bar_name)
+            addon.timers[bar_name].name = transition
+        end
     end
+
 end
 
 --- Apply fade-in for a bar or a group of bars using timers
@@ -179,7 +194,7 @@ function addon:FadeInBarTimer(bar, bar_name)
     local timer = addon:Timer(function()
         alpha = alpha + addon.db.FadeInAlphaStep
         if alpha >= addon.db["AlphaMax"] then
-            addon:CancelTimer(bar_name)
+            addon:CancelTimer(bar_name, true)
             alpha = addon.db["AlphaMax"]
         end
         addon.fades[bar_name] = alpha
@@ -326,18 +341,20 @@ function addon:HandleFlyoutHide()
     local prev_bypass = self.bypass
     if (prev_bypass) then
         self.bypass = nil
-        addon.timers[prev_bypass] = self:Timer(function()
-            self.bars[prev_bypass]:SetAlpha(0)
-        end, 1.2)
+        addon:FadeBar("FadeOut", self.bars[prev_bypass], prev_bypass)
     end
 end
 
 -- Addon Tables
 -----------------------------------------------------------
 
+--- Map for created timers. Keys should be the bar names.
 addon.timers = {}
+--- Map for current bar alpha values. Keys are bar names.
 addon.fades = {}
+--- Reference map for all bars enumerated in `bar_names`.
 addon.bars = {}
+--- Reference map for all bar buttons enumerated in `button_names`.
 addon.buttons = {}
 addon.bar_names = {
     MAIN_BAR,
