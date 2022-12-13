@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. Be aware th
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.1] 2022-12-13
+### Fixed
+- Bars will finish fading in before fading out if mouseover ends before then.
+
 ## [2.0.0] 2022-12-11
 ### Added
 - Configuration panel (#1)
