@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. Be aware th
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.2] 2023-01-25
+### Changed
+- Bumped TOC to 10.0.5
+
 ## [2.0.1] 2022-12-13
 ### Fixed
 - Bars will finish fading in before fading out if mouseover ends before then.
@@ -37,7 +41,7 @@ Many thanks to @Bulbistan and @Tcheetox for their contributions in this release!
 ### Added
 - The cooldown bling is now hidden
 - Added command to toggle mouseover: `/togglemo`
-- Bumped TOC to 100002
+- Bumped TOC to 10.0.2
 
 ## [1.1.0] 2022-11-07
 ### Added
