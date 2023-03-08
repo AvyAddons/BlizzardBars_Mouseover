@@ -22,7 +22,6 @@ local string_find = string.find
 -----------------------------------------------------------
 -- Up-value any WoW functions used here.
 local _G = _G
-local GetTime = _G.GetTime
 local C_TimerAfter = _G.C_Timer.After
 ---@type Frame
 local QuickKeybindFrame = _G["QuickKeybindFrame"]
