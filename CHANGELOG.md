@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.4] 2023-04-21
+### Fixed
+- The main bar will now recheck dragonriding conditions after changing zones
+
+	This fixes instances where the character was dragonriding and teleports to a dungeon via LFG, for example.
+
 ## [2.0.3] 2023-03-22
 ### Changed
 - Bumped TOC to 10.0.7
