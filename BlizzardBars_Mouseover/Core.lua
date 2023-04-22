@@ -178,7 +178,6 @@ function addon:FadeBar(transition, bar, bar_name)
             addon.timers[bar_name].name = transition
         end
     end
-
 end
 
 --- Apply fade-in for a bar or a group of bars using timers
@@ -308,19 +307,35 @@ function addon:ToggleBars()
 end
 
 --- Show main vehicle bar when dragonriding
-function addon:Dragonriding()
+---@param event WowEvent Event name
+---@param isInitialLogin boolean Only defined when event is 'PLAYER_ENTERING_WORLD'
+function addon:Dragonriding(event, isInitialLogin)
     if (not self.enabled) then
         return
     end
-    if (IsMounted() and HasBonusActionBar()) then
-        -- we're dragonriding
-        self.dragonriding = true
+
+    if event == "PLAYER_ENTERING_WORLD" and isInitialLogin == true then
+        C_Timer.After(2, self.Dragonriding)
+        return
+    end
+
+    -- shamelessly copied from WeakAuras
+    -- https://github.com/WeakAuras/WeakAuras2/blob/acd04c2e8e495ed5e9237db219aa01aeff195bc0/WeakAuras/Dragonriding.lua
+    local dragonridingSpellIds = C_MountJournal.GetCollectedDragonridingMounts()
+    self.dragonriding = false
+    if IsMounted() then
+        for _, mountId in ipairs(dragonridingSpellIds) do
+            local spellId = select(2, C_MountJournal.GetMountInfoByID(mountId))
+            if C_UnitAuras.GetPlayerAuraBySpellID(spellId) then
+                self.dragonriding = true
+            end
+        end
+    end
+
+    if (self.dragonriding) then
         -- show main bar
         self.bars[MAIN_BAR]:SetAlpha(1)
-    elseif self.dragonriding then
-        -- elseif (not IsMounted() and self.dragonriding) then
-        -- if we were dragonriding and stopped, hide everything again
-        self.dragonriding = false
+    else
         self:ApplyOnBar(self.bars[MAIN_BAR], MAIN_BAR)
     end
 end
@@ -398,8 +413,8 @@ addon.bypass = nil
 --- @param event WowEvent The name of the event that fired.
 --- @param ... unknown Any payloads passed by the event handlers.
 function addon:OnEvent(event, ...)
-    if (event == "PLAYER_MOUNT_DISPLAY_CHANGED") then
-        self:Dragonriding()
+    if (event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "PLAYER_ENTERING_WORLD") then
+        self:Dragonriding(event, ...)
     elseif (event == "ACTIONBAR_SHOWGRID") then
         self:ShowBars()
     elseif (event == "ACTIONBAR_HIDEGRID") then
