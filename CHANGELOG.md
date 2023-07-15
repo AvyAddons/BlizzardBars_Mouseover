@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.5] 2023-07-15
+### Changed
+- Bumped TOC to 10.1.5
+
 ## [2.0.4] 2023-04-21
 ### Fixed
 - The main bar will now recheck dragonriding conditions after changing zones
