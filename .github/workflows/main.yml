@@ -11,6 +11,7 @@ on:
 
 jobs:
   release:
+    environment: Release
     runs-on: ubuntu-latest
 
     env:
@@ -20,9 +21,11 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # gets git history for changelogs
+          fetch-depth: 0
 
       - name: Package and release
         uses: BigWigsMods/packager@v2
+        with:
+          args: -g retail
