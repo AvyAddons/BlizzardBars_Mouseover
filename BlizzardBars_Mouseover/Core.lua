@@ -307,8 +307,8 @@ function addon:ToggleBars()
 end
 
 --- Show main vehicle bar when dragonriding
----@param event WowEvent Event name
----@param isInitialLogin boolean Only defined when event is 'PLAYER_ENTERING_WORLD'
+---@param event WowEvent|nil Event name
+---@param isInitialLogin boolean|nil Only defined when event is 'PLAYER_ENTERING_WORLD'
 function addon:Dragonriding(event, isInitialLogin)
 	if (not self.enabled) then
 		return

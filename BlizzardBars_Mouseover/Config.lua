@@ -139,6 +139,7 @@ function addon:CreateSlider(parent, name, title, x, y, suffix, default)
 	if default == nil then default = 0 end
 	if addon.db[name] ~= nil then default = addon.db[name] end
 
+	---@class Slider : Frame
 	local slider = CreateFrame("Slider", name .. "Slider_BBM", parent, "OptionsSliderTemplate")
 	slider.currentValue = -1
 	slider:SetOrientation("HORIZONTAL")
@@ -170,6 +171,7 @@ end
 
 --- Create the in-game addon option window
 function addon:CreateConfigPanel()
+	---@class Frame
 	local panel = CreateFrame("Frame", addonName .. "OptionsFrame")
 	panel.name = addon.shortName
 	InterfaceOptions_AddCategory(panel)
