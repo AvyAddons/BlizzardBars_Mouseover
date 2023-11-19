@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.1.0] 2023-11-19
+### Changed
+- Added option to Show/Hide main bar during dragonriding.
+  - Enabled by default (keeps previous behaviour)
+- Updated some deprecated Blizzard APIs
+
 ## [2.0.7] 2023-11-08
 ### Changed
 - Bumped TOC to 10.2.0
