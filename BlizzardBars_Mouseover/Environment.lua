@@ -18,9 +18,9 @@ local _G = _G
 ---@type table<string, function>
 local SlashCmdList = _G["SlashCmdList"]
 local GetBuildInfo = _G.GetBuildInfo
-local GetAddOnInfo = _G.GetAddOnInfo
-local GetNumAddOns = _G.GetNumAddOns
-local GetAddOnEnableState = _G.GetAddOnEnableState
+local GetAddOnInfo = C_AddOns.GetAddOnInfo
+local GetNumAddOns = C_AddOns.GetNumAddOns
+local GetAddOnEnableState = C_AddOns.GetAddOnEnableState
 
 -- Setup the environment
 -- This file should run last, as some values here depend on the existance of
@@ -35,9 +35,7 @@ local MAJOR, MINOR, PATCH = string_split(".", version)
 MAJOR = tonumber(MAJOR)
 
 -- These are defined in FrameXML/BNet.lua
--- *Using blizzard constants if they exist,
--- using string parsing as a fallback.
-addon.IsRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE) or (MAJOR >= 10)
+addon.IsRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
 
 -- Store major, minor, build, and TOC number.
 addon.ClientMajor = MAJOR
@@ -110,7 +108,7 @@ end
 ---@return string security
 function addon.GetAddOnInfo(index)
 	local name, title, notes, loadable, reason, security, newVersion = GetAddOnInfo(index)
-	local enabled = not (GetAddOnEnableState(UnitName("player"), index) == 0)
+	local enabled = not (GetAddOnEnableState(name, UnitName("player")) == 0)
 	return name, title, notes, enabled, loadable, reason, security
 end
 
