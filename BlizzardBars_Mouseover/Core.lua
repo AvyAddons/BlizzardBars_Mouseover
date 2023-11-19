@@ -310,7 +310,7 @@ end
 ---@param event WowEvent|nil Event name
 ---@param isInitialLogin boolean|nil Only defined when event is 'PLAYER_ENTERING_WORLD'
 function addon:Dragonriding(event, isInitialLogin)
-	if (not self.enabled) then
+	if (not self.enabled or not addon.db.Dragonriding) then
 		return
 	end
 
