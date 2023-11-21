@@ -165,6 +165,7 @@ function addon:FadeBar(transition, bar, bar_name)
 
 	if self.db["LinkActionBars"] then
 		for _, linked_bar_name in ipairs(self.bar_names) do
+			self:CancelTimer(linked_bar_name) -- required to prevent flickering
 			if self.db[linked_bar_name] and self:CheckBypass(linked_bar_name) then
 				local linked_bar = self.bars[linked_bar_name]
 				addon.timers[linked_bar_name] = addon[transition .. "BarTimer"](self, linked_bar, linked_bar_name)
