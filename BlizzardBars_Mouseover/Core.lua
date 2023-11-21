@@ -88,7 +88,7 @@ end
 function addon:GetFlyoutParent()
 	if (SpellFlyout:IsShown()) then
 		local parent = SpellFlyout:GetParent()
-		local parent_name = parent:GetName() or ""
+		local parent_name = parent ~= nil and parent:GetName() or ""
 		if (string_find(parent_name, "([Bb]utton)%d")) then
 			local index = (function(array, value)
 				for i, v in ipairs(array) do if v == value then return i end end
@@ -105,6 +105,7 @@ end
 
 --- Bypass transformation for specific bars
 ---@param bar_name string
+---@return boolean true if the bar should not be bypassed
 function addon:CheckBypass(bar_name)
 	-- if we're dragonriding and this is the main bar, bypass the function
 	local dragonridingBypass = (self.dragonriding and bar_name == MAIN_BAR)
@@ -136,21 +137,19 @@ end
 ---@param bar_name string Name of the base frame
 function addon:SecureHook(frame, bar, bar_name)
 	frame:HookScript("OnEnter", function()
-		if addon.enabled then
-			-- Always immediately start the fade-in, regardless of a running fade-out
-			addon:CancelTimer(bar_name)
-			addon:FadeBar("FadeIn", bar, bar_name)
-		end
+		if not addon.enabled then return end
+		-- Always immediately start the fade-in, regardless of a running fade-out
+		addon:CancelTimer(bar_name)
+		addon:FadeBar("FadeIn", bar, bar_name)
 	end)
 
 	frame:HookScript("OnLeave", function()
-		if addon.enabled then
-			local timer = addon.timers[bar_name]
-			if (timer and not timer.cancelled and timer.name == "FadeIn") then
-				timer.post_call = function() addon:FadeBar("FadeOut", bar, bar_name) end
-			else
-				addon:FadeBar("FadeOut", bar, bar_name)
-			end
+		if not addon.enabled then return end
+		local timer = addon.timers[bar_name]
+		if (timer and not timer.cancelled and timer.name == "FadeIn") then
+			timer.post_call = function() addon:FadeBar("FadeOut", bar, bar_name) end
+		else
+			addon:FadeBar("FadeOut", bar, bar_name)
 		end
 	end)
 end
