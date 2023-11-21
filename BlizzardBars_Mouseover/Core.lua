@@ -302,6 +302,7 @@ function addon:ToggleBars()
 		self:RegisterEvent("ACTIONBAR_SHOWGRID")
 		self:RegisterEvent("ACTIONBAR_HIDEGRID")
 		self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+		self:RegisterEvent("PLAYER_ENTERING_WORLD")
 	end
 end
 
@@ -490,6 +491,7 @@ end
 -- and most data is available to the user.
 function addon:OnEnable()
 	self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 	-- These get called when we're dragging a spell
 	self:RegisterEvent("ACTIONBAR_SHOWGRID")
