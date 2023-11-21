@@ -117,14 +117,14 @@ end
 --- Round a value to the nearest percentile
 ---@param value any Sliders values
 function addon:RoundToNearestPercentile(value)
-	local value = value * 100
-	local remain = math_fmod(value, 1)
+	local val = value * 100
+	local remain = math_fmod(val, 1)
 	if remain < 0.5 then
-		value = value - remain
+		val = val - remain
 	elseif remain > 0.5 then
-		value = value + 1 - remain
+		val = val + 1 - remain
 	end
-	return value / 100
+	return val / 100
 end
 
 --- Create a slider in the setting window
