@@ -6,7 +6,6 @@ addon.shortName = "BlizzardBars"
 -- Lua API
 -----------------------------------------------------------
 -- Up-value any lua functions used here.
-local tonumber = tonumber
 local string_gsub = string.gsub
 local string_find = string.find
 local string_split = string.split
@@ -17,10 +16,6 @@ local string_split = string.split
 local _G = _G
 ---@type table<string, function>
 local SlashCmdList = _G["SlashCmdList"]
-local GetBuildInfo = _G.GetBuildInfo
-local GetAddOnInfo = C_AddOns.GetAddOnInfo
-local GetNumAddOns = C_AddOns.GetNumAddOns
-local GetAddOnEnableState = C_AddOns.GetAddOnEnableState
 
 -- Setup the environment
 -- This file should run last, as some values here depend on the existance of
@@ -28,43 +23,9 @@ local GetAddOnEnableState = C_AddOns.GetAddOnEnableState
 -----------------------------------------------------------
 addon.eventFrame = CreateFrame("Frame", addonName .. "EventFrame", UIParent)
 
-local version, build, build_date, toc_version = GetBuildInfo()
-
--- Let's create some constants for faster lookup
-local MAJOR, MINOR, PATCH = string_split(".", version)
-MAJOR = tonumber(MAJOR)
-
--- These are defined in FrameXML/BNet.lua
-addon.IsRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
-
--- Store major, minor, build, and TOC number.
-addon.ClientMajor = MAJOR
-addon.ClientMinor = tonumber(MINOR)
-addon.ClientBuild = tonumber(build)
-addon.ClientTocVersion = toc_version
-
--- Set a relative sub-path to look for media files in.
-local Path
-function addon:SetMediaPath(path)
-	Path = path
-end
-
 -- Should mostly be used for debugging
 function addon:Print(...)
 	print("|cff33ff99" .. addonName .. ":|r", ...)
-end
-
--- Simple API calls to retrieve a media file.
--- Will honor the relative sub-path set above, if defined,
--- and will default to the addon folder itself if not.
--- Note that we cannot check for file or folder existence
--- from within the WoW API, so you must make sure this is correct.
-function addon:GetMedia(name, file_type)
-	if (Path) then
-		return ([[Interface\AddOns\%s\%s\%s.%s]]):format(addonName, Path, name, file_type or "tga")
-	else
-		return ([[Interface\AddOns\%s\%s.%s]]):format(addonName, name, file_type or "tga")
-	end
 end
 
 -- Parse chat input arguments
@@ -73,7 +34,7 @@ local parse = function(msg)
 	msg = string_gsub(msg, "%s+$", "") -- Remove spaces at the end.
 	msg = string_gsub(msg, "%s+", " ") -- Replace all space characters with single spaces.
 	if (string_find(msg, "%s")) then
-		return string_split(" ", msg)  -- If multiple arguments exist, split them into separate return values.
+		return string_split(" ", msg)   -- If multiple arguments exist, split them into separate return values.
 	else
 		return msg
 	end
@@ -85,67 +46,16 @@ end
 ---@param command string
 ---@param callback fun(self: table, editBox: number, commandName: string, ...: string): nil
 function addon:RegisterChatCommand(command, callback)
-	command = string_gsub(command, "^\\", "")                          -- Remove any backslash at the start.
-	command = string.lower(command)                                    -- Make it lowercase, keep it case-insensitive.
+	command = string_gsub(command, "^\\", "")                         -- Remove any backslash at the start.
+	command = string.lower(command)                                   -- Make it lowercase, keep it case-insensitive.
 	local name = string.upper(addonName .. "_CHATCOMMAND_" .. command) -- Create a unique uppercase name for the command.
-	_G["SLASH_" .. name .. "1"] = "/" .. command                       -- Register the chat command, keeping it lowercase.
+	_G["SLASH_" .. name .. "1"] = "/" .. command                      -- Register the chat command, keeping it lowercase.
 	SlashCmdList[name] = function(msg, editBox)
 		local func = self[callback] or callback or addon.OnChatCommand
 		if (func) then
 			func(addon, editBox, command, parse(string.lower(msg)))
 		end
 	end
-end
-
---- Loads information on an addon based on the index
----@param index number
----@return string name
----@return string title
----@return string notes
----@return boolean enabled
----@return boolean loadable
----@return string reason
----@return string security
-function addon.GetAddOnInfo(index)
-	local name, title, notes, loadable, reason, security, newVersion = GetAddOnInfo(index)
-	local enabled = not (GetAddOnEnableState(name, UnitName("player")) == 0)
-	return name, title, notes, enabled, loadable, reason, security
-end
-
---- Check if an addon exists in the addon listing and loadable on demand
----@param target string Target addon name
----@param ignoreLoD boolean Ignore addon that are "Load on Demand"
----@return boolean
-function addon.IsAddOnLoadable(target, ignoreLoD)
-	local targetName = string.lower(target)
-	for i = 1, GetNumAddOns() do
-		local name, title, notes, enabled, loadable, reason, security = addon.GetAddOnInfo(i)
-		if string.lower(name) == targetName then
-			if loadable or ignoreLoD then
-				return true
-			end
-		end
-	end
-	return false
-end
-
----This method lets you check if an addon WILL be loaded regardless of whether or not it currently is.
----This is useful if you want to check if an addon interacting with yours is enabled.
----My philosophy is that it's best to avoid addon dependencies in the toc file,
----unless your addon is a plugin to another addon, that is.
----@param target string Target addon's name
----@return boolean
-function addon.IsAddOnEnabled(target)
-	local targetName = string.lower(target)
-	for i = 1, GetNumAddOns() do
-		local name, title, notes, enabled, loadable, reason, security = addon.GetAddOnInfo(i)
-		if string.lower(name) == targetName then
-			if enabled and loadable then
-				return true
-			end
-		end
-	end
-	return false
 end
 
 -- Event API
