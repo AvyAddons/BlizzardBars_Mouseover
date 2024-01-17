@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.1.2] 2024-01-17
+### Fixed
+- Resolved a `nil` reference in macOS clients
+### Changed
+- Bumped TOC to 10.2.5
+
 ## [2.1.1] 2023-11-21
 ### Fixed
 - Resolved a flickering issue with linked bars
