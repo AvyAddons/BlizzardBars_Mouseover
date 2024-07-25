@@ -28,7 +28,7 @@ body:
       description: What version of World of Warcraft are are you running?
       options:
         - Retail
-        - Classic Era
+        - Classic Era / Hardcore
         - Wrath Classic
         - Beta / PTR
     validations:
