@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Changed
+- Update Configuration panel to new Vertical Layout
+
+## [2.2.1] 2024-07-27
+### Fixed
+- Update deprecated API in chat command `/bbm`
+
 ## [2.2.0] 2024-07-27
 ### Changed
 - Update deprecated APIs
