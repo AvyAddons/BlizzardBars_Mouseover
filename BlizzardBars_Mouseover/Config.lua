@@ -175,7 +175,6 @@ function addon:CreateConfigPanel()
 	---@class Frame
 	local panel = CreateFrame("Frame", addonName .. "OptionsFrame")
 	panel.name = addon.shortName
-	InterfaceOptions_AddCategory(panel)
 
 	self:CreateHeader(panel, "ActionBars", "Action Bars", -10)
 
@@ -207,4 +206,7 @@ function addon:CreateConfigPanel()
 
 	self:CreateSlider(panel, "AlphaMin", "Minimum Alpha", 20, -440)
 	self:CreateSlider(panel, "AlphaMax", "Maximum Alpha", 360, -440)
+
+	local category = Settings.RegisterCanvasLayoutCategory(panel, addon.shortName)
+	Settings.RegisterAddOnCategory(category)
 end
