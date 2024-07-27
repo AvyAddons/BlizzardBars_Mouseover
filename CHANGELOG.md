@@ -1,7 +1,12 @@
-# BlizzardBars_Mouseover Change Log
+# BlizzardBars_Mouseover Changelog
 All notable changes to this project will be documented in this file. Be aware that the [Unreleased] features are not yet available in the official tagged builds.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
+
+## [2.2.0] 2024-07-27
+### Changed
+- Update deprecated APIs
+- Bumped TOC to 11.0.0, 11.0.2
 
 ## [2.1.4] 2024-05-08
 ### Changed
