@@ -1,6 +1,8 @@
 -- Retrieve addon folder name, and our local, private namespace.
----@type string, table
-local addonName, addon = ...
+---@type string
+local addonName = ...
+---@class addon
+local addon = select(2, ...)
 addon.shortName = "BlizzardBars"
 
 -- Lua API

@@ -1,10 +1,8 @@
 -- Retrieve addon folder name, and our local, private namespace.
----@type string, table
-local addonName, addon = ...
-
--- Fetch the localization table
----@type table<string, string>
-local L = addon.L
+---@type string
+local addonName = ...
+---@class addon
+local addon = select(2, ...)
 
 --@debug@
 _G["BBM"] = addon

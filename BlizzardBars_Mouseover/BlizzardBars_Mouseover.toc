@@ -16,8 +16,8 @@
 ## X-Curse-Project-ID: 699633
 ## X-Wago-ID: VBNB7L6x
 
-Localization.lua
 Core.lua
+Localization.lua
 Config.lua
 Environment.lua
 
