@@ -21,6 +21,7 @@ local string_find = string.find
 -- Up-value any WoW functions used here.
 local _G = _G
 local C_TimerAfter = _G.C_Timer.After
+local UnitPowerBarID = _G.UnitPowerBarID
 ---@type Frame
 local QuickKeybindFrame = _G["QuickKeybindFrame"]
 ---@type Frame
@@ -300,8 +301,9 @@ function addon:ToggleBars()
 		self:HideBars()
 		self:RegisterEvent("ACTIONBAR_SHOWGRID")
 		self:RegisterEvent("ACTIONBAR_HIDEGRID")
-		self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 		self:RegisterEvent("PLAYER_ENTERING_WORLD")
+		self:RegisterEvent("UNIT_POWER_BAR_SHOW")
+		self:RegisterEvent("UNIT_POWER_BAR_HIDE")
 	end
 end
 
@@ -314,23 +316,13 @@ function addon:Dragonriding(event, isInitialLogin)
 	end
 
 	if event == "PLAYER_ENTERING_WORLD" and isInitialLogin == true then
-		C_Timer.After(1, self.Dragonriding)
+		C_Timer.After(2, self.Dragonriding)
 		return
 	end
 
 	-- shamelessly copied from WeakAuras
-	-- https://github.com/WeakAuras/WeakAuras2/blob/acd04c2e8e495ed5e9237db219aa01aeff195bc0/WeakAuras/Dragonriding.lua
-	local dragonridingSpellIds = C_MountJournal.GetCollectedDragonridingMounts()
-	self.dragonriding = false
-	if IsMounted() then
-		for _, mountId in ipairs(dragonridingSpellIds) do
-			local spellId = select(2, C_MountJournal.GetMountInfoByID(mountId))
-			if C_UnitAuras.GetPlayerAuraBySpellID(spellId) then
-				self.dragonriding = true
-			end
-		end
-	end
-
+	-- https://github.com/WeakAuras/WeakAuras2/blob/main/WeakAuras/Dragonriding.lua
+	self.dragonriding = UnitPowerBarID("player") == 631
 	if (self.dragonriding) then
 		-- show main bar
 		self.bars[MAIN_BAR]:SetAlpha(1)
@@ -412,7 +404,7 @@ addon.bypass = nil
 --- @param event WowEvent The name of the event that fired.
 --- @param ... unknown Any payloads passed by the event handlers.
 function addon:OnEvent(event, ...)
-	if (event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "PLAYER_ENTERING_WORLD") then
+	if (event == "PLAYER_ENTERING_WORLD" or event == "UNIT_POWER_BAR_SHOW" or event == "UNIT_POWER_BAR_HIDE") then
 		self:Dragonriding(event, ...)
 	elseif (event == "ACTIONBAR_SHOWGRID") then
 		self:ShowBars()
@@ -489,8 +481,9 @@ end
 -- This fires when most of the user interface has been loaded
 -- and most data is available to the user.
 function addon:OnEnable()
-	self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
+	self:RegisterEvent("UNIT_POWER_BAR_SHOW")
+	self:RegisterEvent("UNIT_POWER_BAR_HIDE")
 
 	-- These get called when we're dragging a spell
 	self:RegisterEvent("ACTIONBAR_SHOWGRID")
