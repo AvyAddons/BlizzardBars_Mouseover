@@ -38,7 +38,7 @@ addon.db = {
 	StanceBar = true,
 	PetActionBar = true,
 	LinkActionBars = false,
-	Dragonriding = true,
+	Skyriding = true,
 	FadeInDelay = 0,
 	FadeInDuration = 0.1,
 	FadeOutDelay = 1,
@@ -59,6 +59,10 @@ function addon:MigrateDB()
 	if (addon.db["pet_bar_ignore"] ~= nil) then
 		addon.db.PetActionBar = addon.db.pet_bar_ignore
 		addon.db.pet_bar_ignore = nil
+	end
+	if addon.db["Dragonriding"] ~= nil then
+		addon.db.Skyriding = addon.db.Dragonriding
+		addon.db.Dragonriding = nil
 	end
 end
 
@@ -192,7 +196,7 @@ function addon:CreateConfigPanel()
 	self:CreateButton(panel, "StanceBar", "Stance Bar", 20, -120)
 	self:CreateButton(panel, "PetActionBar", "Pet Action Bar", 193, -120)
 	self:CreateButton(panel, "LinkActionBars", "Link Action Bars", 20, -165)
-	self:CreateButton(panel, "Dragonriding", "Show while Dragonriding", 193, -165)
+	self:CreateButton(panel, "Skyriding", "Show while Skyriding", 193, -165)
 
 	self:CreateHeader(panel, "FadeInTimes", "Fade in times", -210)
 

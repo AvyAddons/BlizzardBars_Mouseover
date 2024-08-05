@@ -8,7 +8,7 @@ Bars become and stay visible under the following conditions:
 - Mouseover
 - Edit Mode
 - Quick Keybind Mode
-- Dragonriding
+- Skyriding
 - Bar has Spell Flyout open (e.g. Pet Utility or Summon Demon)
 
 ## Chat Commands

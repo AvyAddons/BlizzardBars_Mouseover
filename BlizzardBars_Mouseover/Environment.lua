@@ -30,13 +30,19 @@ function addon:Print(...)
 	print("|cff33ff99" .. addonName .. ":|r", ...)
 end
 
+function addon:Debug(...)
+	--@debug@
+	print("|cff33ff99" .. addonName .. ":|r", ...)
+	--@end-debug@
+end
+
 -- Parse chat input arguments
 local parse = function(msg)
 	msg = string_gsub(msg, "^%s+", "") -- Remove spaces at the start.
 	msg = string_gsub(msg, "%s+$", "") -- Remove spaces at the end.
 	msg = string_gsub(msg, "%s+", " ") -- Replace all space characters with single spaces.
 	if (string_find(msg, "%s")) then
-		return string_split(" ", msg)   -- If multiple arguments exist, split them into separate return values.
+		return string_split(" ", msg) -- If multiple arguments exist, split them into separate return values.
 	else
 		return msg
 	end
@@ -48,10 +54,10 @@ end
 ---@param command string
 ---@param callback fun(self: table, editBox: number, commandName: string, ...: string): nil
 function addon:RegisterChatCommand(command, callback)
-	command = string_gsub(command, "^\\", "")                         -- Remove any backslash at the start.
-	command = string.lower(command)                                   -- Make it lowercase, keep it case-insensitive.
+	command = string_gsub(command, "^\\", "")                       -- Remove any backslash at the start.
+	command = string.lower(command)                                 -- Make it lowercase, keep it case-insensitive.
 	local name = string.upper(addonName .. "_CHATCOMMAND_" .. command) -- Create a unique uppercase name for the command.
-	_G["SLASH_" .. name .. "1"] = "/" .. command                      -- Register the chat command, keeping it lowercase.
+	_G["SLASH_" .. name .. "1"] = "/" .. command                    -- Register the chat command, keeping it lowercase.
 	SlashCmdList[name] = function(msg, editBox)
 		local func = self[callback] or callback or addon.OnChatCommand
 		if (func) then
