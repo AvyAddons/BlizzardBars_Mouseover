@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 - Update Configuration panel to new Vertical Layout
 
+## [2.3.0] 2024-08-05
+### Improvements
+- Improved Skyriding detection. Should now be faster and cause less lag (thanks WA team!)
+### Fixed
+- Fixed taint when clicking bars with mouseover enabled
+### Changed
+- Major code refactoring, now with better logical split
+
 ## [2.2.1] 2024-07-27
 ### Fixed
 - Update deprecated API in chat command `/bbm`
