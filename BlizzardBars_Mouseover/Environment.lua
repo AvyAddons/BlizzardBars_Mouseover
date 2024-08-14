@@ -3,7 +3,6 @@
 local addonName = ...
 ---@class addon
 local addon = select(2, ...)
-addon.shortName = "BlizzardBars"
 
 -- Lua API
 -----------------------------------------------------------
@@ -52,7 +51,7 @@ end
 -- Your callback will be called as callback(addon, editBox, commandName, ...) where (...) are all the input parameters.
 --- Register a chat command under the addon name
 ---@param command string
----@param callback fun(self: table, editBox: number, commandName: string, ...: string): nil
+---@param callback nil|fun(self: table, editBox: number, commandName: string, ...: string): nil
 function addon:RegisterChatCommand(command, callback)
 	command = string_gsub(command, "^\\", "")                       -- Remove any backslash at the start.
 	command = string.lower(command)                                 -- Make it lowercase, keep it case-insensitive.

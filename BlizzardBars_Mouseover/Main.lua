@@ -1,5 +1,6 @@
 ---@class addon
 local addon = select(2, ...)
+addon.shortName = "BlizzardBars"
 
 --@debug@
 _G["BBM"] = addon
