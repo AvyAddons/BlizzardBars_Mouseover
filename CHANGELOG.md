@@ -3,12 +3,12 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
-### Changed
-- Update Configuration panel to new Vertical Layout
-
+## [2.4.0] 2024-08-14
 ### Fixed
 - The chat commands (`/bbm` and `/bbm config`) now properly open to BBM's settings
+
+### Changed
+- Update Configuration panel to new Vertical Layout
 
 ## [2.3.0] 2024-08-05
 ### Improvements
