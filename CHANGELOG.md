@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 - Update Configuration panel to new Vertical Layout
 
+### Fixed
+- The chat commands (`/bbm` and `/bbm config`) now properly open to BBM's settings
+
 ## [2.3.0] 2024-08-05
 ### Improvements
 - Improved Skyriding detection. Should now be faster and cause less lag (thanks WA team!)

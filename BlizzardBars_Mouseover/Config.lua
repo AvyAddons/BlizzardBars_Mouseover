@@ -330,6 +330,7 @@ end
 --- Create the in-game addon option window
 function addon:CreateConfigPanel()
 	local category, layout = Settings.RegisterVerticalLayoutCategory(addon.shortName)
+	addon.category = category:GetID()
 
 	local function FormatSeconds(value)
 		return string.format("%.1fs", value)

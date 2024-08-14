@@ -112,9 +112,9 @@ function addon:OnChatCommand(editBox, command, ...)
 
 	local arg1, arg2 = ...
 	if (not arg1 or arg1 == "") then
-		Settings_OpenToCategory(addon.shortName)
+		Settings_OpenToCategory(addon.category)
 	elseif (arg1 == "config") then
-		Settings_OpenToCategory(addon.shortName)
+		Settings_OpenToCategory(addon.category)
 	elseif (arg1 == "toggle") then
 		self:ToggleBars()
 	elseif (arg1 == "help") then
