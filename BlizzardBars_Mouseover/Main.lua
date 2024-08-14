@@ -128,9 +128,6 @@ end
 -- Initialization.
 -- This fires when the addon and its settings are loaded.
 function addon:OnInit()
-	-- we sometimes change the options, hence the need to migrate tables
-	self:MigrateDB()
-
 	-- we can access Actions Bars via _G[bar]
 	-- populate bar references
 	for _, barName in ipairs(self.bar_names) do
@@ -154,8 +151,6 @@ function addon:OnInit()
 	-- this needs a manual insert, since otherwise this button is never visible
 	-- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
 	table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
-	-- Initialize Blizzard options panel
-	self:CreateConfigPanel()
 	-- Chat commands
 	self:RegisterChatCommand('bbm')
 end

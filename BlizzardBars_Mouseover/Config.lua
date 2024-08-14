@@ -3,19 +3,13 @@
 local addonName = ...
 ---@class addon
 local addon = select(2, ...)
+local L = addon.L
 
 -- Lua API
 -----------------------------------------------------------
 -- Up-value any lua functions used here.
 local math_abs = math.abs
 local math_fmod = math.fmod
-
-
--- WoW API
------------------------------------------------------------
--- Up-value any WoW functions used here.
----@type function
-local InterfaceOptions_AddCategory = _G.InterfaceOptions_AddCategory
 
 -- Your default settings.
 -----------------------------------------------------------
@@ -25,6 +19,7 @@ local InterfaceOptions_AddCategory = _G.InterfaceOptions_AddCategory
 -- * You should access saved settings by using `db[key]`
 -- * Don't put frame handles or other widget references in here,
 --   just strings, numbers, and booleans. Tables also work.
+---@class db
 addon.db = {
 	-- Put your default settings here
 	MainMenuBar = true,
@@ -48,6 +43,244 @@ addon.db = {
 	MaxRefreshRate = 0.01,
 	FadeInAlphaStep = 0.1,
 	FadeOutAlphaStep = 0.1,
+}
+addon.settings = {
+	actionBarsProxy = {
+		{
+			name = L["Action Bar 1"],
+			tooltip = L["Toggle mouseover for the main action bar"],
+			variable = addon.shortName .. "_MainBar",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.MainMenuBar
+			end,
+			SetValue = function(value)
+				addon.db.MainMenuBar = value
+				addon:ApplyOnBar(addon.bars["MainMenuBar"], "MainMenuBar")
+			end,
+		},
+		{
+			name = L["Action Bar 2"],
+			tooltip = L["Toggle mouseover for the bottom left action bar"],
+			variable = addon.shortName .. "_Bar2",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.MultiBarBottomLeft
+			end,
+			SetValue = function(value)
+				addon.db.MultiBarBottomLeft = value
+				addon:ApplyOnBar(addon.bars["MultiBarBottomLeft"], "MultiBarBottomLeft")
+			end,
+		},
+		{
+			name = L["Action Bar 3"],
+			tooltip = L["Toggle mouseover for the bottom right action bar"],
+			variable = addon.shortName .. "_Bar3",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.MultiBarBottomRight
+			end,
+			SetValue = function(value)
+				addon.db.MultiBarBottomRight = value
+				addon:ApplyOnBar(addon.bars["MultiBarBottomRight"], "MultiBarBottomRight")
+			end,
+		},
+		{
+			name = L["Action Bar 4"],
+			tooltip = L["Toggle mouseover for the right action bar"],
+			variable = addon.shortName .. "_Bar4",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.MultiBarRight
+			end,
+			SetValue = function(value)
+				addon.db.MultiBarRight = value
+				addon:ApplyOnBar(addon.bars["MultiBarRight"], "MultiBarRight")
+			end,
+		},
+		{
+			name = L["Action Bar 5"],
+			tooltip = L["Toggle mouseover for the left action bar"],
+			variable = addon.shortName .. "_Bar5",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.MultiBarLeft
+			end,
+			SetValue = function(value)
+				addon.db.MultiBarLeft = value
+				addon:ApplyOnBar(addon.bars["MultiBarLeft"], "MultiBarLeft")
+			end,
+		},
+		{
+			name = L["Action Bar 6"],
+			tooltip = L["Toggle mouseover for the action bar 6"],
+			variable = addon.shortName .. "_Bar6",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.MultiBar5
+			end,
+			SetValue = function(value)
+				addon.db.MultiBar5 = value
+				addon:ApplyOnBar(addon.bars["MultiBar5"], "MultiBar5")
+			end,
+		},
+		{
+			name = L["Action Bar 7"],
+			tooltip = L["Toggle mouseover for the action bar 7"],
+			variable = addon.shortName .. "_Bar7",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.MultiBar6
+			end,
+			SetValue = function(value)
+				addon.db.MultiBar6 = value
+				addon:ApplyOnBar(addon.bars["MultiBar6"], "MultiBar6")
+			end,
+		},
+		{
+			name = L["Action Bar 8"],
+			tooltip = L["Toggle mouseover for the action bar 8"],
+			variable = addon.shortName .. "_Bar8",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.MultiBar7
+			end,
+			SetValue = function(value)
+				addon.db.MultiBar7 = value
+				addon:ApplyOnBar(addon.bars["MultiBar7"], "MultiBar7")
+			end,
+		},
+		{
+			name = L["Stance Bar"],
+			tooltip = L["Toggle mouseover for the stance bar"],
+			variable = addon.shortName .. "_StanceBar",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.StanceBar
+			end,
+			SetValue = function(value)
+				addon.db.StanceBar = value
+				addon:ApplyOnBar(addon.bars["StanceBar"], "StanceBar")
+			end,
+		},
+		{
+			name = L["Pet Action Bar"],
+			tooltip = L["Toggle mouseover for the pet action bar"],
+			variable = addon.shortName .. "_PetBar",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.PetActionBar
+			end,
+			SetValue = function(value)
+				addon.db.PetActionBar = value
+				addon:ApplyOnBar(addon.bars["PetActionBar"], "PetActionBar")
+			end,
+		},
+	},
+	actionBars = {
+		{
+			name = L["Link Action Bars"],
+			tooltip = L["Link all action bars to show/hide together"],
+			variable = addon.shortName .. "_Link",
+			variableKey = "LinkActionBars",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.False,
+		},
+		{
+			name = L["Show while Skyriding"],
+			tooltip = L["Show main action bar while skyriding"],
+			variable = addon.shortName .. "_Skyriding",
+			variableKey = "Skyriding",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+		}
+	},
+	fadeSliders = {
+		{
+			name = L["Fade-in delay"],
+			tooltip = L["Delay before the action bar fades in"],
+			variable = addon.shortName .. "_FadeInDelay",
+			variableKey = "FadeInDelay",
+			variableTbl = addon.db,
+			type = Settings.VarType.Number,
+			defaultValue = 0,
+			minValue = 0,
+			maxValue = 2,
+			step = 0.1,
+		},
+		{
+			name = L["Fade-in duration"],
+			tooltip = L["Duration of the fade-in animation"],
+			variable = addon.shortName .. "_FadeInDuration",
+			variableKey = "FadeInDuration",
+			variableTbl = addon.db,
+			type = Settings.VarType.Number,
+			defaultValue = 0.1,
+			minValue = 0,
+			maxValue = 2,
+			step = 0.1,
+		},
+		{
+			name = L["Fade-out delay"],
+			tooltip = L["Delay before the action bar fades out"],
+			variable = addon.shortName .. "_FadeOutDelay",
+			variableKey = "FadeOutDelay",
+			variableTbl = addon.db,
+			type = Settings.VarType.Number,
+			defaultValue = 1,
+			minValue = 0,
+			maxValue = 2,
+			step = 0.1,
+		},
+		{
+			name = L["Fade-out duration"],
+			tooltip = L["Duration of the fade-out animation"],
+			variable = addon.shortName .. "_FadeOutDuration",
+			variableKey = "FadeOutDuration",
+			variableTbl = addon.db,
+			type = Settings.VarType.Number,
+			defaultValue = 0.1,
+			minValue = 0,
+			maxValue = 2,
+			step = 0.1,
+		},
+	},
+	alphaSliders = {
+		{
+			name = L["Fade-in transparency"],
+			tooltip = L["Transparency of the action bar when fully faded in"],
+			variable = addon.shortName .. "_AlphaMin",
+			variableKey = "AlphaMin",
+			variableTbl = addon.db,
+			type = Settings.VarType.Number,
+			defaultValue = 0,
+			minValue = 0,
+			maxValue = 1,
+			step = 0.01,
+		},
+		{
+			name = L["Fade-out transparency"],
+			tooltip = L["Transparency of the action bar when fully faded out"],
+			variable = addon.shortName .. "_AlphaMax",
+			variableKey = "AlphaMax",
+			variableTbl = addon.db,
+			type = Settings.VarType.Number,
+			defaultValue = 1,
+			minValue = 0,
+			maxValue = 1,
+			step = 0.01,
+		},
+	},
 }
 
 -- Addon API
@@ -81,45 +314,6 @@ function addon:ComputeValues()
 	end
 end
 
---- Create checkbox for an action bar to active the mouseover settings
----@param parent Frame In-game option window
----@param name string Bar name
----@param title string Check box text
----@param x number Position on setting window x axis
----@param y number Position on setting window y axis
----@param default any Default value for this button
-function addon:CreateButton(parent, name, title, x, y, default)
-	if default == nil then default = true end
-	if addon.db[name] ~= nil then default = addon.db[name] end
-
-	local cb = CreateFrame("CheckButton", name .. "CheckButton_BBM", parent, "InterfaceOptionsCheckButtonTemplate")
-	cb:SetPoint("TOPLEFT", x, y)
-	cb.Text:SetText(title)
-	cb:SetChecked(default)
-	cb:SetScript("OnClick", function(this)
-		addon.db[name] = this:GetChecked()
-		addon:ApplyOnBar(addon.bars[name], name)
-	end)
-	return cb
-end
-
---- Create a section in the setting window
----@param parent Frame In-game option window
----@param name string Font string name
----@param title string Label text
----@param y number Position on setting window y axis
-function addon:CreateHeader(parent, name, title, y)
-	local header = parent:CreateFontString(name .. "FontString_BBM", "ARTWORK", "GameFontNormalLarge")
-	header:SetPoint("TOP", -20, y)
-	header:SetText(title)
-	local line = parent:CreateTexture()
-	line:SetTexture("Interface/BUTTONS/WHITE8X8")
-	line:SetColorTexture(255, 255, 255, 0.4)
-	line:SetSize(630, 0.6)
-	line:SetPoint("TOP", -7, y - 23)
-	return header
-end
-
 --- Round a value to the nearest percentile
 ---@param value any Sliders values
 function addon:RoundToNearestPercentile(value)
@@ -133,86 +327,67 @@ function addon:RoundToNearestPercentile(value)
 	return val / 100
 end
 
---- Create a slider in the setting window
----@param parent Frame In-game option window
----@param name string Slider frame name
----@param title string Slider label text
----@param x number Position on setting window x axis
----@param y number Position on setting window y axis
----@param suffix string|nil
----@param default any Default value for this slider
-function addon:CreateSlider(parent, name, title, x, y, suffix, default)
-	if suffix == nil then suffix = "" end
-	if default == nil then default = 0 end
-	if addon.db[name] ~= nil then default = addon.db[name] end
-
-	---@class Slider : Frame
-	local slider = CreateFrame("Slider", name .. "Slider_BBM", parent, "OptionsSliderTemplate")
-	slider.currentValue = -1
-	slider:SetOrientation("HORIZONTAL")
-	slider:SetWidth(250)
-	slider:SetHeight(15)
-	slider:SetPoint("TOPLEFT", x, y)
-	_G[slider:GetName() .. "Low"]:SetText("0" .. suffix)
-	_G[slider:GetName() .. "High"]:SetText("1" .. suffix)
-	_G[slider:GetName() .. "Text"]:SetText(title .. " (" .. default .. suffix .. ")")
-	slider:SetMinMaxValues(0, 1)
-	slider:SetValue(default)
-	slider:SetValueStep(0.05)
-	slider:SetObeyStepOnDrag(true)
-	slider:SetScript("OnValueChanged", function(this, value)
-		local roundValue = addon:RoundToNearestPercentile(value)
-		if roundValue == this.currentValue then
-			return
-		end
-		this.currentValue = roundValue
-		this.Text:SetText(title .. " (" .. roundValue .. suffix .. ")")
-		addon.db[name] = roundValue
-		addon:ComputeValues()
-		for _, bar_name in pairs(addon.bar_names) do
-			addon:ApplyOnBar(addon.bars[bar_name], bar_name)
-		end
-	end)
-	return slider
-end
-
 --- Create the in-game addon option window
 function addon:CreateConfigPanel()
-	---@class Frame
-	local panel = CreateFrame("Frame", addonName .. "OptionsFrame")
-	panel.name = addon.shortName
+	local category, layout = Settings.RegisterVerticalLayoutCategory(addon.shortName)
 
-	self:CreateHeader(panel, "ActionBars", "Action Bars", -10)
+	local function FormatSeconds(value)
+		return string.format("%.1fs", value)
+	end
 
-	-- Button to activate/deactivate mouseover
-	self:CreateButton(panel, "MainMenuBar", "Action Bar 1", 20, -50)
-	self:CreateButton(panel, "MultiBarBottomLeft", "Action Bar 2", 193, -50)
-	self:CreateButton(panel, "MultiBarBottomRight", "Action Bar 3", 366, -50)
-	self:CreateButton(panel, "MultiBarRight", "Action Bar 4", 540, -50)
-	self:CreateButton(panel, "MultiBarLeft", "Action Bar 5", 20, -85)
-	self:CreateButton(panel, "MultiBar5", "Action Bar 6", 193, -85)
-	self:CreateButton(panel, "MultiBar6", "Action Bar 7", 366, -85)
-	self:CreateButton(panel, "MultiBar7", "Action Bar 8", 540, -85)
-	self:CreateButton(panel, "StanceBar", "Stance Bar", 20, -120)
-	self:CreateButton(panel, "PetActionBar", "Pet Action Bar", 193, -120)
-	self:CreateButton(panel, "LinkActionBars", "Link Action Bars", 20, -165)
-	self:CreateButton(panel, "Skyriding", "Show while Skyriding", 193, -165)
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Action Bars"])); -- weird way to say "Add a header to the list"
+	for _, s in ipairs(addon.settings.actionBarsProxy) do
+		local setting = Settings.RegisterProxySetting(
+			category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
+		Settings.CreateCheckbox(category, setting, s.tooltip)
+	end
+	for _, s in ipairs(addon.settings.actionBars) do
+		-- the variable table must be the global saved variables table, the reference with addon.db does not work
+		local setting = Settings.RegisterAddOnSetting(
+			category, s.variable, s.variableKey, _G[addonName .. "_DB"], s.type, s.name, s.defaultValue)
+		Settings.CreateCheckbox(category, setting, s.tooltip)
+	end
 
-	self:CreateHeader(panel, "FadeInTimes", "Fade in times", -210)
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Fade Times"]));
+	for _, s in ipairs(addon.settings.fadeSliders) do
+		local GetValue = function() return addon.db[s.variableKey] end
+		local SetValue = function(value)
+			local roundValue = addon:RoundToNearestPercentile(value)
+			if roundValue == addon.db[s.variableKey] then return end
+			addon.db[s.variableKey] = value
+			addon:ComputeValues()
+		end
+		local setting = Settings.RegisterProxySetting(
+			category, s.variable, s.type, s.name, s.defaultValue, GetValue, SetValue)
+		local options = Settings.CreateSliderOptions(s.minValue, s.maxValue, s.step);
+		options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, FormatSeconds);
+		Settings.CreateSlider(category, setting, options, s.tooltip)
+	end
 
-	self:CreateSlider(panel, "FadeInDelay", "Fade in delay", 20, -260, "s")
-	self:CreateSlider(panel, "FadeInDuration", "Fade in duration", 360, -260, "s")
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Transparency"]));
+	for _, s in ipairs(addon.settings.alphaSliders) do
+		local GetValue = function() return addon.db[s.variableKey] end
+		local SetValue = function(value)
+			local roundValue = addon:RoundToNearestPercentile(value)
+			if roundValue == addon.db[s.variableKey] then return end
+			addon.db[s.variableKey] = value
+			addon:ComputeValues()
+			for _, bar_name in pairs(addon.bar_names) do
+				addon:ApplyOnBar(addon.bars[bar_name], bar_name)
+			end
+		end
+		local setting = Settings.RegisterProxySetting(
+			category, s.variable, s.type, s.name, s.defaultValue, GetValue, SetValue)
+		local options = Settings.CreateSliderOptions(s.minValue, s.maxValue, s.step);
+		options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, FormatPercentage);
+		Settings.CreateSlider(category, setting, options, s.tooltip)
+	end
 
-	self:CreateHeader(panel, "FadeOutTimes", "Fade out times", -300)
-
-	self:CreateSlider(panel, "FadeOutDelay", "Fade out delay", 20, -350, "s")
-	self:CreateSlider(panel, "FadeOutDuration", "Fade out duration", 360, -350, "s")
-
-	self:CreateHeader(panel, "Alphas", "Alphas", -390)
-
-	self:CreateSlider(panel, "AlphaMin", "Minimum Alpha", 20, -440)
-	self:CreateSlider(panel, "AlphaMax", "Maximum Alpha", 360, -440)
-
-	local category = Settings.RegisterCanvasLayoutCategory(panel, addon.shortName)
 	Settings.RegisterAddOnCategory(category)
 end
+
+EventRegistry:RegisterFrameEventAndCallback("VARIABLES_LOADED", function()
+	-- we sometimes change the options, hence the need to migrate tables
+	addon:MigrateDB()
+	addon:CreateConfigPanel()
+end)
