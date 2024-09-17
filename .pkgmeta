@@ -1,9 +1,6 @@
 package-as: BlizzardBars_Mouseover
 enable-nolib-creation: no
 
-move-folders:
-    BlizzardBars_Mouseover/BlizzardBars_Mouseover: BlizzardBars_Mouseover
-
 manual-changelog:
     filename: CHANGELOG.md
     markup-type: markdown

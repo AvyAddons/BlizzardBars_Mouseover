@@ -147,7 +147,7 @@ function addon:FadeBar(transition, bar, bar_name)
 	assert(transition == "FadeIn" or transition == "FadeOut", "Unkown transition")
 	--@end-debug@
 
-	if self.db["LinkActionBars"] then
+	if self.db["LinkActionBars"] and self.db[bar_name] then
 		for _, linked_bar_name in ipairs(self.bar_names) do
 			self:CancelTimer(linked_bar_name) -- required to prevent flickering
 			if self.db[linked_bar_name] and self:CheckBypass(linked_bar_name) then
@@ -224,7 +224,7 @@ end
 --- Hook all bars
 function addon:HookBars()
 	self:ResumeCallbacks()
-	-- these secure hooks are automatically de-hook on reload/relog, we can ignore OnDisable
+	-- these secure hooks are automatically de-hooked on reload/relog, we can ignore OnDisable
 	for bar_name, bar in pairs(self.bars) do
 		self:HookBar(bar, bar_name)
 	end
