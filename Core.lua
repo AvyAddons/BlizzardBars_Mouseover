@@ -321,6 +321,8 @@ function addon:HandleFlyoutShow()
 	if (not self.enabled) then return end
 	-- this returns nil if the parent isn't one of the bars we're hiding
 	self.bypass = self:GetFlyoutParent()
+	-- this happens when opening a flyout from the spellbook
+	if (self.bypass == nil) then return end
 	self:CancelTimer(self.bypass)
 	self.bars[self.bypass]:SetAlpha(1)
 end
