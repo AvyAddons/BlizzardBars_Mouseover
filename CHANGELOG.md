@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.4.1] 2024-10-14
+### Fixed
+- Opening flyout spells from the Spellbook no longer errors
+
 ## [2.4.0] 2024-08-14
 ### Fixed
 - The chat commands (`/bbm` and `/bbm config`) now properly open to BBM's settings
