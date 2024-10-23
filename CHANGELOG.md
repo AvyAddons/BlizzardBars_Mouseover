@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+## Changed
+- Bump TOC to 11.0.2, 11.0.5
+
 ## [2.4.1] 2024-10-14
 ### Fixed
 - Opening flyout spells from the Spellbook no longer errors
