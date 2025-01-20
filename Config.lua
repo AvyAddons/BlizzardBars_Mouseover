@@ -198,7 +198,7 @@ addon.settings = {
 		},
 		{
 			name = L["Show while Skyriding"],
-			tooltip = L["Show main action bar while skyriding"],
+			tooltip = L["Show main action bar while skyriding. Requires a reload to take effect."],
 			variable = addon.shortName .. "_Skyriding",
 			variableKey = "Skyriding",
 			type = Settings.VarType.Boolean,

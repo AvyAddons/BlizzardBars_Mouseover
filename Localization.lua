@@ -77,7 +77,7 @@ end)({
 		["Toggle mouseover for the stance bar"] = true,
 		["Toggle mouseover for the pet action bar"] = true,
 		["Link all action bars to show/hide together"] = true,
-		["Show main action bar while skyriding"] = true,
+		["Show main action bar while skyriding. Requires a reload to take effect."] = true,
 		["Fade-in delay"] = true,
 		["Fade-out delay"] = true,
 		["Fade-in duration"] = true,
