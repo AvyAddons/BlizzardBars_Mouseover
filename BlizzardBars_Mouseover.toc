@@ -1,4 +1,4 @@
-## Interface: 110002, 110005, 110007
+## Interface: 110005, 110007
 
 ## Title: BlizzardBars_Mouseover
 ## Notes: Hides the default Blizzard bars, shows them on mouseover.

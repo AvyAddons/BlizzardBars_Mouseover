@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.4.5] 2025-02-06
+### Removed
+- Drop support for TOC 11.0.2
+
 ## [2.4.4] 2025-01-20
 ### Fixed
 - Updated settings text to reflect when a `/reload` is required.
