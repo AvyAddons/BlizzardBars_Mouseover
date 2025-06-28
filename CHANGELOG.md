@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- Add a new setting to always show the Exit Vehicle button.
+
 ## [2.5.1] 2025-04-27
 ### Changed
 - Bump TOC to 11.1.5
