@@ -18,6 +18,7 @@
 
 ## DefaultState: Enabled
 ## SavedVariables: BlizzardBars_Mouseover_DB
+## LoadSavedVariablesFirst: 1
 
 ## X-Date: @project-date-iso@
 ## X-Category: Action Bars
