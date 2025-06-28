@@ -322,6 +322,42 @@ function addon:Skyriding(event, isInitialLogin)
 	end
 end
 
+--- Special handling for vehicle buttons
+---@param event FrameEvent The name of the event that fired.
+function addon:Vehicle(event, ...)
+	-- ignore when bypass disabled
+	if (not self.enabled or not addon.db.Vehicle) then return end
+
+	local vehicle = UnitInVehicle("player") or UnitOnTaxi("player") or false
+	addon:Debug("Vehicle event: " .. event .. ", vehicle: " .. tostring(vehicle))
+
+	local button = _G["MainMenuBarVehicleLeaveButton"]
+	local canExit = button:CanExitVehicle();
+	addon:Debug("Vehicle exit button can exit: " .. tostring(canExit))
+
+	if (vehicle) then
+		-- show vehicle exit button
+		addon:Debug("Vehicle exit button can exit: " .. tostring(canExit))
+		if canExit then
+			-- have to change parent, otherwise MainMenuBar will hide it
+			button:SetParent(UIParent)
+			button:Show()
+			-- button:SetAlpha(1)
+		else
+			-- hide vehicle exit button
+			button:SetParent(addon.bars[MAIN_BAR])
+			button:Hide()
+			-- button:SetAlpha(0)
+		end
+	else
+		if not canExit then
+			button:SetParent(addon.bars[MAIN_BAR])
+			button:Hide()
+			-- button:SetAlpha(0)
+		end
+	end
+end
+
 function addon:HandleFlyoutShow()
 	-- ignore when bypass enabled
 	if (not self.enabled) then return end

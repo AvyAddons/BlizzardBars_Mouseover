@@ -89,7 +89,16 @@ addon.bypass = nil
 function addon:OnEvent(event, ...)
 	if (event == "PLAYER_ENTERING_WORLD" or event == "UNIT_POWER_BAR_SHOW" or event == "UNIT_POWER_BAR_HIDE") then
 		self:Skyriding(event, ...)
-	elseif (event == "ACTIONBAR_SHOWGRID") then
+	end
+	if (event == "PLAYER_ENTERING_WORLD"
+			or event == "UNIT_ENTERED_VEHICLE"
+			or event == "UNIT_EXITED_VEHICLE"
+			or event == "VEHICLE_UPDATE"
+			or event == "UPDATE_BONUS_ACTIONBAR") then
+		self:Vehicle(event, ...)
+	end
+
+	if (event == "ACTIONBAR_SHOWGRID") then
 		self:ShowBars()
 	elseif (event == "ACTIONBAR_HIDEGRID") then
 		self:HideBars()
@@ -148,9 +157,12 @@ function addon:OnInit()
 			end
 		end
 	end
-	-- this needs a manual insert, since otherwise this button is never visible
-	-- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
-	table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
+	-- if we're always showing the exit vehicle button, skip this
+	if not addon.db.Vehicle then
+		-- this needs a manual insert, since otherwise this button is never visible
+		-- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
+		table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
+	end
 	-- Chat commands
 	self:RegisterChatCommand('bbm')
 end
@@ -162,6 +174,12 @@ function addon:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 	self:RegisterEvent("UNIT_POWER_BAR_SHOW")
 	self:RegisterEvent("UNIT_POWER_BAR_HIDE")
+
+	-- Vehicle events
+	self:RegisterEvent("UNIT_ENTERED_VEHICLE")
+	self:RegisterEvent("UNIT_EXITED_VEHICLE")
+	self:RegisterEvent("VEHICLE_UPDATE")
+	self:RegisterEvent("UPDATE_BONUS_ACTIONBAR")
 
 	-- These get called when we're dragging a spell
 	self:RegisterEvent("ACTIONBAR_SHOWGRID")

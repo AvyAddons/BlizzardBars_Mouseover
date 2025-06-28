@@ -34,6 +34,7 @@ addon.db = {
 	PetActionBar = true,
 	LinkActionBars = false,
 	Skyriding = true,
+	Vehicle = true,
 	FadeInDelay = 0,
 	FadeInDuration = 0.1,
 	FadeOutDelay = 1,
@@ -201,6 +202,14 @@ addon.settings = {
 			tooltip = L["Show main action bar while skyriding. Requires a reload to take effect."],
 			variable = addon.shortName .. "_Skyriding",
 			variableKey = "Skyriding",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+		},
+		{
+			name = L["Show Vehicle Exit Button"],
+			tooltip = L["Always show the vehicle exit button when mounted on a vehicle or taxi. Requires a reload to take effect."],
+			variable = addon.shortName .. "_Vehicle",
+			variableKey = "Vehicle",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 		}
