@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [2.6.0] 2025-06-28
 ### Added
 - Add a new setting to always show the Exit Vehicle button.
 
