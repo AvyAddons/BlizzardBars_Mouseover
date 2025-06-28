@@ -70,10 +70,10 @@ end
 -- Proxy event registering to the addon namespace.
 -- The 'self' within these should refer to our proxy frame,
 -- which has been passed to this environment method as the 'self'.
----@param event WowEvent
+---@param event FrameEvent
 addon.RegisterEvent = function(_, event) addon.eventFrame:RegisterEvent(event) end
 addon.RegisterUnitEvent = function(_, ...) addon.eventFrame:RegisterUnitEvent(...) end
----@param event WowEvent
+---@param event FrameEvent
 addon.UnregisterEvent = function(_, event) addon.eventFrame:UnregisterEvent(event) end
 addon.UnregisterAllEvents = function(_) addon.eventFrame:UnregisterAllEvents() end
 addon.IsEventRegistered = function(_, ...) addon.eventFrame:IsEventRegistered(...) end

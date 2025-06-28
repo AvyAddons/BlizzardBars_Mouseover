@@ -286,14 +286,20 @@ function addon:ToggleBars()
 		self:HideBars()
 		self:RegisterEvent("ACTIONBAR_SHOWGRID")
 		self:RegisterEvent("ACTIONBAR_HIDEGRID")
+		-- Skyriding events
 		self:RegisterEvent("PLAYER_ENTERING_WORLD")
 		self:RegisterEvent("UNIT_POWER_BAR_SHOW")
 		self:RegisterEvent("UNIT_POWER_BAR_HIDE")
+		-- Vehicle events
+		self:RegisterEvent("UNIT_ENTERED_VEHICLE")
+		self:RegisterEvent("UNIT_EXITED_VEHICLE")
+		self:RegisterEvent("VEHICLE_UPDATE")
+		self:RegisterEvent("TAXIMAP_CLOSED")
 	end
 end
 
 --- Show main vehicle bar when skyriding
----@param event WowEvent|nil Event name
+---@param event FrameEvent|nil Event name
 ---@param isInitialLogin boolean|nil Only defined when event is 'PLAYER_ENTERING_WORLD'
 function addon:Skyriding(event, isInitialLogin)
 	if (not addon.enabled or not addon.db.Skyriding) then

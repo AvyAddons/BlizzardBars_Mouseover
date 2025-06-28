@@ -84,7 +84,7 @@ addon.bypass = nil
 
 -- Your event handler.
 -- Any events you add should be handled here.
---- @param event WowEvent The name of the event that fired.
+--- @param event FrameEvent The name of the event that fired.
 --- @param ... unknown Any payloads passed by the event handlers.
 function addon:OnEvent(event, ...)
 	if (event == "PLAYER_ENTERING_WORLD" or event == "UNIT_POWER_BAR_SHOW" or event == "UNIT_POWER_BAR_HIDE") then
