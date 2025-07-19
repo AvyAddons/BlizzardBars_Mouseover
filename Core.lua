@@ -329,15 +329,12 @@ function addon:Vehicle(event, ...)
 	if (not self.enabled or not addon.db.Vehicle) then return end
 
 	local vehicle = UnitInVehicle("player") or UnitOnTaxi("player") or false
-	addon:Debug("Vehicle event: " .. event .. ", vehicle: " .. tostring(vehicle))
 
 	local button = _G["MainMenuBarVehicleLeaveButton"]
 	local canExit = button:CanExitVehicle();
-	addon:Debug("Vehicle exit button can exit: " .. tostring(canExit))
 
 	if (vehicle) then
 		-- show vehicle exit button
-		addon:Debug("Vehicle exit button can exit: " .. tostring(canExit))
 		if canExit then
 			-- have to change parent, otherwise MainMenuBar will hide it
 			button:SetParent(UIParent)
