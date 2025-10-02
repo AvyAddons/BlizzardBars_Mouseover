@@ -259,7 +259,8 @@ function addon:PauseCallbacks()
 end
 
 --- Show all bars
-function addon:ShowBars()
+--- @param frames boolean|nil If true, also show frame containers and micro menu
+function addon:ShowBars(frames)
 	self:CancelAllTimers()
 	self:PauseCallbacks()
 	for bar_name, bar in pairs(self.bars) do
@@ -267,20 +268,25 @@ function addon:ShowBars()
 		self:SetBlingRender(bar_name, true)
 	end
 	-- Also show frame containers and micro menu for toggle command
-	self:ShowFrameContainers()
-	self:ShowMicroMenu()
+	if frames then
+		self:ShowFrameContainers()
+		self:ShowMicroMenu()
+	end
 end
 
 --- Hide all bars
-function addon:HideBars()
+--- @param frames boolean|nil If true, also hide frame containers and micro menu
+function addon:HideBars(frames)
 	self:ResumeCallbacks()
 	for bar_name, bar in pairs(self.bars) do
 		self:ApplyOnBar(bar, bar_name)
 		self:SetBlingRender(bar_name, false)
 	end
 	-- Also hide frame containers and micro menu
-	self:HideFrameContainers()
-	self:HideMicroMenu()
+	if frames then
+		self:HideFrameContainers()
+		self:HideMicroMenu()
+	end
 end
 
 --- Toggle bar visibility and (un)register grid events
@@ -625,4 +631,22 @@ end
 --- Hide all micro menu buttons
 function addon:HideMicroMenu()
 	self:ApplyOnMicroMenu()
+end
+
+--- Handle game menu showing - restore micro button alpha to 1 while menu is open
+function addon:HandleGameMenuShow()
+	-- When the Game Menu is shown, Blizzard reduces the micro buttons' alpha to 0.5
+	-- The two exceptions are the Store and Main Menu buttons, which are set to alpha 1
+	if addon.enabled and addon.db.MicroButtons then
+		_G.StoreMicroButton:SetAlpha(1)
+		_G.MainMenuMicroButton:SetAlpha(1)
+	end
+end
+
+--- Handle game menu hiding - restore our micro button alpha
+function addon:HandleGameMenuHide()
+	-- Restore our micro button alpha after the menu closes and Blizzard resets to alpha 1
+	if addon.enabled and addon.db.MicroButtons then
+		addon:ApplyOnMicroMenu()
+	end
 end

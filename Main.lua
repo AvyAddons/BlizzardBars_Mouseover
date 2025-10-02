@@ -22,6 +22,8 @@ local QuickKeybindFrame = _G["QuickKeybindFrame"]
 local EditModeManagerFrame = _G["EditModeManagerFrame"]
 ---@type Frame
 local SpellFlyout = _G["SpellFlyout"]
+---@type Frame
+local GameMenuFrame = _G["GameMenuFrame"]
 ---@type function
 local Settings_OpenToCategory = Settings.OpenToCategory
 
@@ -96,9 +98,9 @@ addon.frame_buttons = {
 		"LFDMicroButton",
 		"CollectionsMicroButton",
 		"EJMicroButton",
-		"MainMenuMicroButton",
 		"QuickJoinToastButton",
 		"StoreMicroButton",
+		"MainMenuMicroButton",
 		-- "QueueStatusButton", -- LFG status, don't hide
 	},
 }
@@ -246,12 +248,16 @@ function addon:OnEnable()
 
 	-- Same thing for Edit Mode
 	-- These cause a small hicup if we call it instantly. So a tiny delay fixes that
-	EditModeManagerFrame:HookScript("OnShow", function() C_TimerAfter(0.05, function() addon:ShowBars() end) end)
-	EditModeManagerFrame:HookScript("OnHide", function() C_TimerAfter(0.05, function() addon:HideBars() end) end)
+	EditModeManagerFrame:HookScript("OnShow", function() C_TimerAfter(0.05, function() addon:ShowBars(true) end) end)
+	EditModeManagerFrame:HookScript("OnHide", function() C_TimerAfter(0.05, function() addon:HideBars(true) end) end)
 
 	-- Flyouts are more complicated, but we wanna show the parent bar while they're open
 	SpellFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow() end)
 	SpellFlyout:HookScript("OnHide", function() addon:HandleFlyoutHide() end)
+
+	-- Game options menu affects micro button alpha - restore our settings when it closes
+	GameMenuFrame:HookScript("OnShow", function() addon:HandleGameMenuShow() end)
+	GameMenuFrame:HookScript("OnHide", function() addon:HandleGameMenuHide() end)
 
 	addon:Skyriding()
 	addon:HookBars()
