@@ -141,7 +141,7 @@ addon.eventFrame:SetScript("OnEvent", function(self, event, ...)
 	-- Note that you can always register more ADDON_LOADED
 	-- if you wish to listen for other addons loading.
 	if (addon[event] and type(addon[event]) == "function") then
-		addon[event](...)
+		addon[event](event, ...)
 	else
 		if (addon.OnEvent) then
 			addon:OnEvent(event, ...)
