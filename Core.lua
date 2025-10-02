@@ -266,6 +266,9 @@ function addon:ShowBars()
 		bar:SetAlpha(1)
 		self:SetBlingRender(bar_name, true)
 	end
+	-- Also show frame containers and micro menu for toggle command
+	self:ShowFrameContainers()
+	self:ShowMicroMenu()
 end
 
 --- Hide all bars
@@ -275,6 +278,9 @@ function addon:HideBars()
 		self:ApplyOnBar(bar, bar_name)
 		self:SetBlingRender(bar_name, false)
 	end
+	-- Also hide frame containers and micro menu
+	self:HideFrameContainers()
+	self:HideMicroMenu()
 end
 
 --- Toggle bar visibility and (un)register grid events
@@ -374,4 +380,249 @@ function addon:HandleFlyoutHide()
 		self.bypass = nil
 		addon:FadeBar("FadeOut", self.bars[prev_bypass], prev_bypass)
 	end
+end
+
+-- Frame Container Functions (for bags bar)
+-----------------------------------------------------------
+
+--- Apply alpha to a given frame container
+---@param container Frame
+---@param container_name string
+function addon:ApplyOnFrameContainer(container, container_name)
+	if (container == nil) then return end
+	if (container_name == nil or not self.db[container_name]) then
+		container:SetAlpha(1)
+		return
+	end
+	if (self.db[container_name]) then
+		container:SetAlpha(addon.db.AlphaMin)
+	else
+		container:SetAlpha(1)
+	end
+end
+
+--- Apply fade-in for frame container using timers
+function addon:FadeInFrameContainerTimer(container_name)
+	local alpha = addon.fades[container_name]
+	if alpha == nil then
+		alpha = addon.db["AlphaMin"]
+		addon.fades[container_name] = alpha
+	end
+	local timer = addon:Timer(function()
+		alpha = alpha + addon.db.FadeInAlphaStep
+		if alpha >= addon.db["AlphaMax"] then
+			addon:CancelTimer(container_name, true)
+			alpha = addon.db["AlphaMax"]
+		end
+		addon.fades[container_name] = alpha
+		-- Apply alpha to the container, not individual buttons
+		self.containers[container_name]:SetAlpha(alpha)
+	end, (addon.db["FadeInDelay"] or 0), addon.db["MaxRefreshRate"])
+	return timer
+end
+
+--- Apply fade-out for frame container using timers
+function addon:FadeOutFrameContainerTimer(container_name)
+	local alpha = addon.fades[container_name]
+	if alpha == nil then
+		alpha = addon.db["AlphaMax"]
+		addon.fades[container_name] = alpha
+	end
+	local timer = addon:Timer(function()
+		alpha = alpha - addon.db.FadeOutAlphaStep
+		if alpha <= addon.db["AlphaMin"] then
+			addon:CancelTimer(container_name)
+			alpha = addon.db["AlphaMin"]
+		end
+		addon.fades[container_name] = alpha
+		-- Apply alpha to the container, not individual buttons
+		self.containers[container_name]:SetAlpha(alpha)
+	end, (addon.db["FadeOutDelay"] or 0), addon.db["MaxRefreshRate"])
+	return timer
+end
+
+--- Fades frame container with a given transition
+---@param transition "FadeIn"|"FadeOut"
+---@param container_name string
+function addon:FadeFrameContainer(transition, container_name)
+	--@debug@
+	assert(transition == "FadeIn" or transition == "FadeOut", "Unknown transition")
+	--@end-debug@
+
+	if self.db[container_name] then
+		if transition == "FadeIn" then
+			addon.timers[container_name] = addon:FadeInFrameContainerTimer(container_name)
+		else
+			addon.timers[container_name] = addon:FadeOutFrameContainerTimer(container_name)
+		end
+		addon.timers[container_name].name = transition
+	end
+end
+
+--- Securely hooks into a frame's OnEnter and OnLeave to show/hide container.
+---@param frame Frame Button frame on which to hook
+---@param container Frame Container frame whose alpha should change
+---@param container_name string Name of the container frame
+function addon:SecureHookFrameContainer(frame, container, container_name)
+	frame:HookScript("OnEnter", function()
+		if not addon.enabled then return end
+		-- Always immediately start the fade-in, regardless of a running fade-out
+		addon:CancelTimer(container_name)
+		addon:FadeFrameContainer("FadeIn", container_name)
+	end)
+
+	frame:HookScript("OnLeave", function()
+		if not addon.enabled then return end
+		local timer = addon.timers[container_name]
+		if (timer and not timer.cancelled and timer.name == "FadeIn") then
+			timer.post_call = function() addon:FadeFrameContainer("FadeOut", container_name) end
+		else
+			addon:FadeFrameContainer("FadeOut", container_name)
+		end
+	end)
+end
+
+--- Show all frame containers
+function addon:ShowFrameContainers()
+	for container_name, container in pairs(self.containers) do
+		self:CancelTimer(container_name)
+		-- Set container to full alpha
+		container:SetAlpha(1)
+	end
+end
+
+--- Hide all frame containers
+function addon:HideFrameContainers()
+	for container_name, container in pairs(self.containers) do
+		self:ApplyOnFrameContainer(container, container_name)
+	end
+end
+
+--- Hook frame containers (bags bar)
+function addon:HookFrameContainers()
+	for container_name, container in pairs(self.containers) do
+		-- Apply initial alpha to container
+		self:ApplyOnFrameContainer(container, container_name)
+		-- Hook all buttons to trigger container fade
+		for _, button in ipairs(self.frame_button_refs[container_name]) do
+			self:SecureHookFrameContainer(button, container, container_name)
+		end
+	end
+end
+
+-- Micro Menu Functions
+-----------------------------------------------------------
+
+--- Apply alpha to all micro menu buttons
+function addon:ApplyOnMicroMenu()
+	if (not self.db.MicroButtons) then
+		for _, button in ipairs(self.frame_button_refs.MicroButtons) do
+			button:SetAlpha(1)
+		end
+		return
+	end
+	for _, button in ipairs(self.frame_button_refs.MicroButtons) do
+		button:SetAlpha(addon.db.AlphaMin)
+	end
+end
+
+--- Fades micro menu with a given transition
+---@param transition "FadeIn"|"FadeOut"
+function addon:FadeMicroMenu(transition)
+	--@debug@
+	assert(transition == "FadeIn" or transition == "FadeOut", "Unknown transition")
+	--@end-debug@
+
+	if self.db.MicroButtons then
+		addon.timers["MicroButtons"] = addon[transition .. "MicroMenuTimer"](self)
+		addon.timers["MicroButtons"].name = transition
+	end
+end
+
+--- Apply fade-in for micro menu using timers
+function addon:FadeInMicroMenuTimer()
+	local alpha = addon.fades["MicroButtons"]
+	if alpha == nil then
+		alpha = addon.db["AlphaMin"]
+		addon.fades["MicroButtons"] = alpha
+	end
+	local timer = addon:Timer(function()
+		alpha = alpha + addon.db.FadeInAlphaStep
+		if alpha >= addon.db["AlphaMax"] then
+			addon:CancelTimer("MicroButtons", true)
+			alpha = addon.db["AlphaMax"]
+		end
+		addon.fades["MicroButtons"] = alpha
+		-- Apply alpha to all micro buttons individually
+		for _, button in ipairs(self.frame_button_refs.MicroButtons) do
+			button:SetAlpha(alpha)
+		end
+	end, (addon.db["FadeInDelay"] or 0), addon.db["MaxRefreshRate"])
+	return timer
+end
+
+--- Apply fade-out for micro menu using timers
+function addon:FadeOutMicroMenuTimer()
+	local alpha = addon.fades["MicroButtons"]
+	if alpha == nil then
+		alpha = addon.db["AlphaMax"]
+		addon.fades["MicroButtons"] = alpha
+	end
+	local timer = addon:Timer(function()
+		alpha = alpha - addon.db.FadeOutAlphaStep
+		if alpha <= addon.db["AlphaMin"] then
+			addon:CancelTimer("MicroButtons")
+			alpha = addon.db["AlphaMin"]
+		end
+		addon.fades["MicroButtons"] = alpha
+		-- Apply alpha to all micro buttons individually
+		for _, button in ipairs(self.frame_button_refs.MicroButtons) do
+			button:SetAlpha(alpha)
+		end
+	end, (addon.db["FadeOutDelay"] or 0), addon.db["MaxRefreshRate"])
+	return timer
+end
+
+--- Securely hooks into a frame's OnEnter and OnLeave to show/hide micro menu.
+---@param frame Frame Button frame on which to hook
+function addon:SecureHookMicroMenu(frame)
+	frame:HookScript("OnEnter", function()
+		if not addon.enabled then return end
+		-- Always immediately start the fade-in, regardless of a running fade-out
+		addon:CancelTimer("MicroButtons")
+		addon:FadeMicroMenu("FadeIn")
+	end)
+
+	frame:HookScript("OnLeave", function()
+		if not addon.enabled then return end
+		local timer = addon.timers["MicroButtons"]
+		if (timer and not timer.cancelled and timer.name == "FadeIn") then
+			timer.post_call = function() addon:FadeMicroMenu("FadeOut") end
+		else
+			addon:FadeMicroMenu("FadeOut")
+		end
+	end)
+end
+
+--- Hook micro menu
+function addon:HookMicroMenu()
+	-- Apply initial alpha to all micro buttons
+	self:ApplyOnMicroMenu()
+	-- Hook all micro buttons to trigger shared fade
+	for _, button in ipairs(self.frame_button_refs.MicroButtons) do
+		self:SecureHookMicroMenu(button)
+	end
+end
+
+--- Show all micro menu buttons
+function addon:ShowMicroMenu()
+	self:CancelTimer("MicroButtons")
+	for _, button in ipairs(self.frame_button_refs.MicroButtons) do
+		button:SetAlpha(1)
+	end
+end
+
+--- Hide all micro menu buttons
+function addon:HideMicroMenu()
+	self:ApplyOnMicroMenu()
 end

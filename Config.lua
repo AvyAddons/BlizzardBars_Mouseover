@@ -32,6 +32,8 @@ addon.db = {
 	MultiBar7 = true,
 	StanceBar = true,
 	PetActionBar = true,
+	BagsBar = true,
+	MicroButtons = true,
 	LinkActionBars = false,
 	Skyriding = true,
 	Vehicle = true,
@@ -207,11 +209,54 @@ addon.settings = {
 		},
 		{
 			name = L["Show Vehicle Exit Button"],
-			tooltip = L["Always show the vehicle exit button when mounted on a vehicle or taxi. Requires a reload to take effect."],
+			tooltip = L
+			["Always show the vehicle exit button when mounted on a vehicle or taxi. Requires a reload to take effect."],
 			variable = addon.shortName .. "_Vehicle",
 			variableKey = "Vehicle",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
+		}
+	},
+	bagsSettings = {
+		{
+			name = L["Bags Bar"],
+			tooltip = L["Toggle mouseover for the bags bar"],
+			variable = addon.shortName .. "_BagsBar",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.BagsBar
+			end,
+			SetValue = function(value)
+				addon.db.BagsBar = value
+				if value then
+					addon:HookFrameContainers()
+					addon:ApplyOnFrameContainer(addon.containers["BagsBar"], "BagsBar")
+				else
+					addon:ShowFrameContainers()
+				end
+			end,
+		}
+	},
+	microMenuSettings = {
+		{
+			name = L["Micro Buttons"],
+			tooltip = L["Toggle mouseover for the micro menu buttons"],
+			variable = addon.shortName .. "_MicroButtons",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.True,
+			GetValue = function()
+				return addon.db.MicroButtons
+			end,
+			SetValue = function(value)
+				addon.db.MicroButtons = value
+				if value then
+					addon:HookMicroMenu()
+					addon:ApplyOnMicroMenu()
+				else
+					addon:ShowMicroMenu()
+				end
+			end,
 		}
 	},
 	fadeSliders = {
@@ -355,6 +400,20 @@ function addon:CreateConfigPanel()
 		-- the variable table must be the global saved variables table, the reference with addon.db does not work
 		local setting = Settings.RegisterAddOnSetting(
 			category, s.variable, s.variableKey, _G[addonName .. "_DB"], s.type, s.name, s.defaultValue)
+		Settings.CreateCheckbox(category, setting, s.tooltip)
+	end
+
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Bags"]));
+	for _, s in ipairs(addon.settings.bagsSettings) do
+		local setting = Settings.RegisterProxySetting(
+			category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
+		Settings.CreateCheckbox(category, setting, s.tooltip)
+	end
+
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Micro Menu"]));
+	for _, s in ipairs(addon.settings.microMenuSettings) do
+		local setting = Settings.RegisterProxySetting(
+			category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
 		Settings.CreateCheckbox(category, setting, s.tooltip)
 	end
 

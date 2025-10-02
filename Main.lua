@@ -70,6 +70,43 @@ addon.button_names = {
 	PET_ACTION_BUTTON,
 }
 
+--- Reference map for frame containers (like BagsBar)
+addon.frame_containers = {
+	"BagsBar", -- Alpha applied to this container only
+}
+
+--- Reference map for frame buttons organized by container
+addon.frame_buttons = {
+	BagsBar = {
+		"MainMenuBarBackpackButton",
+		"BagBarExpandToggle",
+		"CharacterBag0Slot",
+		"CharacterBag1Slot",
+		"CharacterBag2Slot",
+		"CharacterBag3Slot",
+		"CharacterReagentBag0Slot",
+	},
+	MicroButtons = {
+		"CharacterMicroButton",
+		"PlayerSpellsMicroButton",
+		"ProfessionMicroButton",
+		"AchievementMicroButton",
+		"QuestLogMicroButton",
+		"GuildMicroButton",
+		"LFDMicroButton",
+		"CollectionsMicroButton",
+		"EJMicroButton",
+		"MainMenuMicroButton",
+		"QuickJoinToastButton",
+		"StoreMicroButton",
+		-- "QueueStatusButton", -- LFG status, don't hide
+	},
+}
+
+--- Reference map for all containers and buttons
+addon.containers = {}
+addon.frame_button_refs = {}
+
 -- these are bypasses and control hover callbacks
 --- Global hover bypass
 addon.enabled = true
@@ -163,6 +200,23 @@ function addon:OnInit()
 		-- it is a child of the MainMenuBar but isn't enumerated like the regular action buttons
 		table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
 	end
+
+	-- populate frame container references
+	for _, containerName in ipairs(self.frame_containers) do
+		self.containers[containerName] = _G[containerName]
+	end
+
+	-- populate frame button references
+	for containerName, buttonList in pairs(self.frame_buttons) do
+		self.frame_button_refs[containerName] = {}
+		for _, buttonName in ipairs(buttonList) do
+			local button = _G[buttonName]
+			if button then
+				table.insert(self.frame_button_refs[containerName], button)
+			end
+		end
+	end
+
 	-- Chat commands
 	self:RegisterChatCommand('bbm')
 end
@@ -201,4 +255,10 @@ function addon:OnEnable()
 
 	addon:Skyriding()
 	addon:HookBars()
+	if addon.db.BagsBar then
+		addon:HookFrameContainers()
+	end
+	if addon.db.MicroButtons then
+		addon:HookMicroMenu()
+	end
 end
