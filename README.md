@@ -1,15 +1,55 @@
 # BlizzardBars Mouseover
-> Hides the default Blizzard bars, shows them on mouseover.
+> Hides some default Blizzard UI elements, shows them on mouseover.
 
-Does what the title says. _Taintless, fast, and small!_
+Provides mouseover functionality for Blizzard's action bars, bags bar, and micro menu. _Taintless, fast, and small!_
 
-Bars become and stay visible under the following conditions:
+## Features
+
+### Action Bars
+- All 8 action bars (Action Bar 1-8)
+- Stance Bar
+- Pet Action Bar
+- Individual bar configuration
+- Link bars option (show/hide together)
+
+### Bags Bar
+- Mouseover functionality for the entire bags bar
+- Includes backpack, bag slots, and reagent bag
+
+### Micro Menu
+- Mouseover for all micro menu buttons
+- Excludes queue status button (LFG green eye)
+- Survives game menu interactions
+
+UI elements become and stay visible under the following conditions:
 
 - Mouseover
 - Edit Mode
 - Quick Keybind Mode
-- Skyriding
+- Skyriding (action bars only)
 - Bar has Spell Flyout open (e.g. Pet Utility or Summon Demon)
+
+## Configuration
+
+Access the configuration panel via `/bbm` or through Interface Options → AddOns.
+
+### Action Bars
+- Individual toggles for each action bar (1-8, Stance, Pet)
+- Link Action Bars: Makes all bars show/hide together
+- Show while Skyriding: Keep main action bar visible during skyriding
+- Show Vehicle Exit Button: Always display vehicle exit button
+
+### Bags
+- Toggle mouseover functionality for the bags bar
+- Affects entire container including backpack and all bag slots
+
+### Micro Menu
+- Toggle mouseover functionality for micro menu buttons
+- LFG Queue button (the green eye) is not included
+
+### Fade Settings
+- Fade-in/out delays and durations (0-2 seconds)
+- Minimum and maximum transparency levels (0-100%)
 
 ## Chat Commands
 
