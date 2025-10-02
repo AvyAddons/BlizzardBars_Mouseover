@@ -1,6 +1,8 @@
 [submodule ".libraries/global-interface-resources"]
 	path = .libraries/global-interface-resources
 	url = https://github.com/Ketho/BlizzardInterfaceResources
+	branch = mainline
 [submodule ".libraries/wow-ui-source"]
 	path = .libraries/wow-ui-source
 	url = https://github.com/Gethe/wow-ui-source
+	branch = live
