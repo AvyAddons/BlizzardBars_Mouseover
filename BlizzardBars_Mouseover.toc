@@ -1,9 +1,10 @@
-## Interface: 110107, 110200
+## Interface: 110200, 110205
 
 ## Title: BlizzardBars_Mouseover
 ## Notes: Hides the default Blizzard bars, shows them on mouseover.
 ## Author: Avyiel
 ## Version: @project-version@
+
 ## Category-enUS: Action Bars
 ## Category-deDE: Aktionsleisten
 ## Category-esES: Barras de acción
@@ -19,6 +20,10 @@
 ## DefaultState: Enabled
 ## SavedVariables: BlizzardBars_Mouseover_DB
 ## LoadSavedVariablesFirst: 1
+
+#@alpha@
+## OptionalDeps: BugSack, BugGrabber
+#@end-alpha@
 
 ## X-Date: @project-date-iso@
 ## X-Category: Action Bars
