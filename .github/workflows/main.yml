@@ -8,8 +8,14 @@ permissions:
 # other branches or even pullrequests.
 on:
   push:
+    branches:
+      - main
     tags:
       - "**"
+    paths-ignore:
+      - ".github/**"
+      - ".libraries/**"
+      - ".gitmodules"
 
 jobs:
   release:
