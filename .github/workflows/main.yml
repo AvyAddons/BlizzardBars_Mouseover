@@ -1,4 +1,6 @@
 name: Packager
+permissions:
+  contents: read
 
 # we need to let GitHub know _when_ we want to release, typically only when we create a new tag.
 # this will target only tags, and not all pushes to the master branch.
