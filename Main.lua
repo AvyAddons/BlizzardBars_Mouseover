@@ -29,7 +29,10 @@ local Settings_OpenToCategory = Settings.OpenToCategory
 
 -- Constants
 -----------------------------------------------------------
-local MAIN_BAR = "MainMenuBar"
+-- Detect Midnight (12.x) vs TWW (11.x), Most of this can be removed once Midnight pre-patch is live.
+local IS_MIDNIGHT = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE) and (select(4, GetBuildInfo()) >= 120000)
+
+local MAIN_BAR = IS_MIDNIGHT and "MainActionBar" or "MainMenuBar" -- Midnight renamed MainMenuBar to MainActionBar.
 addon.MAIN_BAR = MAIN_BAR
 local PET_BAR = "PetActionBar"
 addon.PET_BAR = PET_BAR
