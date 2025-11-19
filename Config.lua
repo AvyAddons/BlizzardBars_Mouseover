@@ -60,7 +60,8 @@ addon.settings = {
 			end,
 			SetValue = function(value)
 				addon.db.MainMenuBar = value
-				addon:ApplyOnBar(addon.bars["MainMenuBar"], "MainMenuBar")
+				local barName = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE) and (select(4, GetBuildInfo()) >= 120000) and "MainActionBar" or "MainMenuBar" -- Midnight compatability. See Main.lua changes.
+				addon:ApplyOnBar(addon.bars[barName], barName)
 			end,
 		},
 		{
