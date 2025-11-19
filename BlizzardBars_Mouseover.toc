@@ -28,7 +28,7 @@
 ## X-Date: @project-date-iso@
 ## X-Category: Action Bars
 ## X-License: MIT
-## X-Contributors: Bulbistan, Tcheetox
+## X-Contributors: Bulbistan, Tcheetox, RedAntisocial
 
 ## X-Curse-Project-ID: 699633
 ## X-Wago-ID: VBNB7L6x

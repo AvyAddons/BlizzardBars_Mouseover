@@ -62,6 +62,7 @@ Access the configuration panel via `/bbm` or through Interface Options → AddOn
 
 - Bulbistan ([GitHub](https://github.com/Bulbistan))
 - Tcheetox ([GitHub](https://github.com/Tcheetox))
+- RedAntisocial ([GitHub](https://github.com/RedAntisocial))
 
 ## Support & Connect
 
