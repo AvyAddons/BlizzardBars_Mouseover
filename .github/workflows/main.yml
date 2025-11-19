@@ -20,6 +20,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    concurrency:
+      group: packager
 
     env:
       GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
