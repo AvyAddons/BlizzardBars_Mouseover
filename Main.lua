@@ -108,6 +108,10 @@ addon.frame_buttons = {
 	},
 }
 
+if IS_MIDNIGHT then
+	table.insert(addon.frame_buttons.MicroButtons, 6, "HousingMicroButton")
+end
+
 --- Reference map for all containers and buttons
 addon.containers = {}
 addon.frame_button_refs = {}

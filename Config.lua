@@ -23,6 +23,7 @@ local math_fmod = math.fmod
 addon.db = {
 	-- Put your default settings here
 	MainMenuBar = true,
+	MainActionBar = true,
 	MultiBarBottomLeft = true,
 	MultiBarBottomRight = true,
 	MultiBarRight = true,
@@ -60,7 +61,8 @@ addon.settings = {
 			end,
 			SetValue = function(value)
 				addon.db.MainMenuBar = value
-				local barName = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE) and (select(4, GetBuildInfo()) >= 120000) and "MainActionBar" or "MainMenuBar" -- Midnight compatability. See Main.lua changes.
+				addon.db.MainActionBar = value
+				local barName = addon.MAIN_BAR
 				addon:ApplyOnBar(addon.bars[barName], barName)
 			end,
 		},
@@ -351,6 +353,12 @@ function addon:MigrateDB()
 	if addon.db["Dragonriding"] ~= nil then
 		addon.db.Skyriding = addon.db.Dragonriding
 		addon.db.Dragonriding = nil
+	end
+	if addon.db["MainMenuBar"] ~= nil and addon.db["MainActionBar"] == nil then
+		self:Debug("Migrating MainActionBar")
+		addon.db.MainActionBar = addon.db.MainMenuBar
+		-- TODO: uncomment once 12.0.0 releases
+		-- addon.db.MainMenuBar = nil
 	end
 end
 
