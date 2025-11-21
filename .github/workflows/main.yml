@@ -2,10 +2,6 @@ name: Packager
 permissions:
   contents: write
 
-# we need to let GitHub know _when_ we want to release, typically only when we create a new tag.
-# this will target only tags, and not all pushes to the master branch.
-# this part can be heavily customized to your liking, like targeting only tags that match a certain word,
-# other branches or even pullrequests.
 on:
   push:
     branches:

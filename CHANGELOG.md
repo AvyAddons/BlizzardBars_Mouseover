@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 ### Added
 - Support for Midnight Beta
+- Support for `ruRU` locale (by @ZamestoTV)
+
+### Changed
+- Bump TOC to 11.2.7
 
 ## [3.0.1] 2025-10-08
 ### Changed
