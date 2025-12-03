@@ -17,5 +17,6 @@
     "~\\.vscode\\extensions\\ketho.wow-api-0.21.0\\Annotations\\Core",
     "./.libraries/"
   ],
-  "workspace.ignoreDir": [".vscode", "./.libraries"]
+  "workspace.ignoreDir": [".vscode", "./.libraries"],
+  "diagnostics.globals": ["C_Timer", "UIParent", "UnitInVehicle", "UnitOnTaxi"]
 }

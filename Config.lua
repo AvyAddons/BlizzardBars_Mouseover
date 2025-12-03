@@ -22,7 +22,6 @@ local math_fmod = math.fmod
 ---@class db
 addon.db = {
 	-- Put your default settings here
-	MainMenuBar = true,
 	MainActionBar = true,
 	MultiBarBottomLeft = true,
 	MultiBarBottomRight = true,
@@ -57,10 +56,9 @@ addon.settings = {
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
-				return addon.db.MainMenuBar
+				return addon.db.MainActionBar
 			end,
 			SetValue = function(value)
-				addon.db.MainMenuBar = value
 				addon.db.MainActionBar = value
 				local barName = addon.MAIN_BAR
 				addon:ApplyOnBar(addon.bars[barName], barName)
@@ -213,7 +211,7 @@ addon.settings = {
 		{
 			name = L["Show Vehicle Exit Button"],
 			tooltip = L
-			["Always show the vehicle exit button when mounted on a vehicle or taxi. Requires a reload to take effect."],
+				["Always show the vehicle exit button when mounted on a vehicle or taxi. Requires a reload to take effect."],
 			variable = addon.shortName .. "_Vehicle",
 			variableKey = "Vehicle",
 			type = Settings.VarType.Boolean,
@@ -357,8 +355,7 @@ function addon:MigrateDB()
 	if addon.db["MainMenuBar"] ~= nil and addon.db["MainActionBar"] == nil then
 		self:Debug("Migrating MainActionBar")
 		addon.db.MainActionBar = addon.db.MainMenuBar
-		-- TODO: uncomment once 12.0.0 releases
-		-- addon.db.MainMenuBar = nil
+		addon.db.MainMenuBar = nil
 	end
 end
 

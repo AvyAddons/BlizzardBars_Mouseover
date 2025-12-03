@@ -29,10 +29,8 @@ local Settings_OpenToCategory = Settings.OpenToCategory
 
 -- Constants
 -----------------------------------------------------------
--- Detect Midnight (12.x) vs TWW (11.x), Most of this can be removed once Midnight pre-patch is live.
-local IS_MIDNIGHT = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE) and (select(4, GetBuildInfo()) >= 120000)
-
-local MAIN_BAR = IS_MIDNIGHT and "MainActionBar" or "MainMenuBar" -- Midnight renamed MainMenuBar to MainActionBar.
+-- 11.2.7 renamed MainMenuBar to MainActionBar.
+local MAIN_BAR = "MainActionBar" -- or "MainMenuBar"
 addon.MAIN_BAR = MAIN_BAR
 local PET_BAR = "PetActionBar"
 addon.PET_BAR = PET_BAR
@@ -97,6 +95,7 @@ addon.frame_buttons = {
 		"ProfessionMicroButton",
 		"AchievementMicroButton",
 		"QuestLogMicroButton",
+		"HousingMicroButton",
 		"GuildMicroButton",
 		"LFDMicroButton",
 		"CollectionsMicroButton",
@@ -107,10 +106,6 @@ addon.frame_buttons = {
 		-- "QueueStatusButton", -- LFG status, don't hide
 	},
 }
-
-if IS_MIDNIGHT then
-	table.insert(addon.frame_buttons.MicroButtons, 6, "HousingMicroButton")
-end
 
 --- Reference map for all containers and buttons
 addon.containers = {}

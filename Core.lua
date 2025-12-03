@@ -351,18 +351,15 @@ function addon:Vehicle(event, ...)
 			-- have to change parent, otherwise MainMenuBar will hide it
 			button:SetParent(UIParent)
 			button:Show()
-			-- button:SetAlpha(1)
 		else
 			-- hide vehicle exit button
 			button:SetParent(addon.bars[MAIN_BAR])
 			button:Hide()
-			-- button:SetAlpha(0)
 		end
 	else
 		if not canExit then
 			button:SetParent(addon.bars[MAIN_BAR])
 			button:Hide()
-			-- button:SetAlpha(0)
 		end
 	end
 end
