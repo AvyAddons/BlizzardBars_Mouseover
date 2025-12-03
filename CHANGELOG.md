@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [4.0.1] 2025-12-03
 ### Fixed
 - Main Action Bar works again (closes [#15](https://github.com/AvyAddons/BlizzardBars_Mouseover/issues/15))
   Preempted the Midnight changes; they're already active in 11.2.7
