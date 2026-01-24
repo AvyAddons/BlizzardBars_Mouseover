@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [4.0.2] 2026-01-24
 ### Fixed
 - Fade Housing micro button alongside others
 
