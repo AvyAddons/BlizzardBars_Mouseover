@@ -356,6 +356,8 @@ function addon:MigrateDB()
 		self:Debug("Migrating MainActionBar")
 		addon.db.MainActionBar = addon.db.MainMenuBar
 		addon.db.MainMenuBar = nil
+	elseif addon.db["MainMenuBar"] ~= nil then
+		addon.db.MainMenuBar = nil
 	end
 end
 
@@ -461,8 +463,9 @@ function addon:CreateConfigPanel()
 	Settings.RegisterAddOnCategory(category)
 end
 
-EventRegistry:RegisterFrameEventAndCallback("VARIABLES_LOADED", function()
+--- Called from Environment.lua after ADDON_LOADED to ensure addon.db is ready
+function addon:InitializeConfig()
 	-- we sometimes change the options, hence the need to migrate tables
-	addon:MigrateDB()
-	addon:CreateConfigPanel()
-end)
+	self:MigrateDB()
+	self:CreateConfigPanel()
+end

@@ -48,6 +48,12 @@ The addon uses a timer-based fade system (`C_Timer.NewTicker`) that:
 3. Incrementally adjusts alpha using `AlphaMin`, `AlphaMax`, and computed step values
 4. Cancels conflicting timers and supports post-completion callbacks
 
+### Saved Variables and Settings Initialization
+
+The addon uses `LoadSavedVariablesFirst: 1` in the TOC to ensure saved variables are available before any code runs. The Settings panel is initialized via `addon:InitializeConfig()` called from the `ADDON_LOADED` handler in Environment.lua - not `VARIABLES_LOADED`, which has no guaranteed firing order since Patch 3.0.2.
+
+This ensures `addon.db` points to the correct saved variables table before any Settings API proxy functions access it.
+
 ### Blizzard UI Interaction Patterns
 
 When hooking Blizzard UI, be aware that Blizzard's `UpdateMicroButton()` methods call `Enable()` which resets alpha to 1 via `OnEnable`. The addon uses `hooksecurefunc` to re-apply alpha after these resets.
@@ -71,3 +77,7 @@ Code between `--@debug@` and `--@end-debug@` comments is stripped during packagi
 - `/bbm` or `/bbm config` - Open settings
 - `/bbm toggle` - Temporarily show all bars
 - `/bbm help` - List commands
+
+### Changelog
+
+The changelog (`CHANGELOG.md`) follows [Keep a Changelog](http://keepachangelog.com/) format. Write entries for end-users with no coding knowledge - avoid technical jargon like event names, API functions, or internal implementation details.

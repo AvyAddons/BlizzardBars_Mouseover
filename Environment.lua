@@ -103,6 +103,10 @@ addon.eventFrame:SetScript("OnEvent", function(self, event, ...)
 			end
 			-- Update our reference so that changed options are saved on logout
 			addon.db = db
+			-- Initialize config
+			if (addon.InitializeConfig) then
+				addon:InitializeConfig()
+			end
 			-- Call the initialization method.
 			if (addon.OnInit) then
 				addon:OnInit()
