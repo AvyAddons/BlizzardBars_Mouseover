@@ -3,9 +3,10 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [4.1.0] 2026-01-24
 ### Fixed
 - Settings should now save more reliably after a UI reload
+- Resolved a conflict with BetterCooldownManager that caused bars to become visible after changing zones or talent specs (closes [#18](https://github.com/AvyAddons/BlizzardBars_Mouseover/issues/18))
 
 ### Changed
 - Better handling for players returning after a long break
