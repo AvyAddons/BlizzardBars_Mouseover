@@ -34,6 +34,8 @@ addon.db = {
 	PetActionBar = true,
 	BagsBar = true,
 	MicroButtons = true,
+	BuffFrame = false,
+	DebuffFrame = false,
 	LinkActionBars = false,
 	Skyriding = true,
 	Vehicle = true,
@@ -260,6 +262,46 @@ addon.settings = {
 			end,
 		}
 	},
+	auraSettings = {
+		{
+			name = L["Buff Frame"],
+			tooltip = L["Toggle mouseover for the buff frame"],
+			variable = addon.shortName .. "_BuffFrame",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.False,
+			GetValue = function()
+				return addon.db.BuffFrame
+			end,
+			SetValue = function(value)
+				addon.db.BuffFrame = value
+				if value then
+					addon:HookAuraFrame("BuffFrame")
+					addon:ApplyOnAuraFrame("BuffFrame")
+				else
+					addon.aura_frames["BuffFrame"]:SetAlpha(1)
+				end
+			end,
+		},
+		{
+			name = L["Debuff Frame"],
+			tooltip = L["Toggle mouseover for the debuff frame"],
+			variable = addon.shortName .. "_DebuffFrame",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.False,
+			GetValue = function()
+				return addon.db.DebuffFrame
+			end,
+			SetValue = function(value)
+				addon.db.DebuffFrame = value
+				if value then
+					addon:HookAuraFrame("DebuffFrame")
+					addon:ApplyOnAuraFrame("DebuffFrame")
+				else
+					addon.aura_frames["DebuffFrame"]:SetAlpha(1)
+				end
+			end,
+		},
+	},
 	fadeSliders = {
 		{
 			name = L["Fade-in delay"],
@@ -420,6 +462,13 @@ function addon:CreateConfigPanel()
 
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Micro Menu"]));
 	for _, s in ipairs(addon.settings.microMenuSettings) do
+		local setting = Settings.RegisterProxySetting(
+			category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
+		Settings.CreateCheckbox(category, setting, s.tooltip)
+	end
+
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Auras"]));
+	for _, s in ipairs(addon.settings.auraSettings) do
 		local setting = Settings.RegisterProxySetting(
 			category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
 		Settings.CreateCheckbox(category, setting, s.tooltip)

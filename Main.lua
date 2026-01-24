@@ -110,6 +110,10 @@ addon.frame_buttons = {
 --- Reference map for all containers and buttons
 addon.containers = {}
 addon.frame_button_refs = {}
+--- Reference map for aura frames (BuffFrame, DebuffFrame)
+addon.aura_frames = {}
+--- Reference map for aura buttons (the individual aura icons)
+addon.aura_buttons = {}
 
 -- these are bypasses and control hover callbacks
 --- Global hover bypass
@@ -221,6 +225,17 @@ function addon:OnInit()
 		end
 	end
 
+	-- populate aura frame references
+	self.aura_frames["BuffFrame"] = _G["BuffFrame"]
+	self.aura_frames["DebuffFrame"] = _G["DebuffFrame"]
+	-- aura buttons are created by Blizzard in AuraFrame_OnLoad
+	if self.aura_frames["BuffFrame"] and self.aura_frames["BuffFrame"].auraFrames then
+		self.aura_buttons["BuffFrame"] = self.aura_frames["BuffFrame"].auraFrames
+	end
+	if self.aura_frames["DebuffFrame"] and self.aura_frames["DebuffFrame"].auraFrames then
+		self.aura_buttons["DebuffFrame"] = self.aura_frames["DebuffFrame"].auraFrames
+	end
+
 	-- Chat commands
 	self:RegisterChatCommand('bbm')
 end
@@ -269,10 +284,8 @@ function addon:OnEnable()
 
 	addon:Skyriding()
 	addon:HookBars()
-	if addon.db.BagsBar then
-		addon:HookFrameContainers()
-	end
-	if addon.db.MicroButtons then
-		addon:HookMicroMenu()
-	end
+	addon:HookMicroMenu()
+	addon:HookFrameContainers()
+	addon:HookAuraFrame("BuffFrame")
+	addon:HookAuraFrame("DebuffFrame")
 end

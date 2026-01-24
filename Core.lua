@@ -259,7 +259,7 @@ function addon:PauseCallbacks()
 end
 
 --- Show all bars
---- @param frames boolean|nil If true, also show frame containers and micro menu
+--- @param frames boolean|nil If true, also show frame containers, micro menu, and aura frames
 function addon:ShowBars(frames)
 	self:CancelAllTimers()
 	self:PauseCallbacks()
@@ -267,35 +267,37 @@ function addon:ShowBars(frames)
 		bar:SetAlpha(1)
 		self:SetBlingRender(bar_name, true)
 	end
-	-- Also show frame containers and micro menu for toggle command
+	-- Also show frame containers, micro menu, and aura frames for toggle command
 	if frames then
 		self:ShowFrameContainers()
 		self:ShowMicroMenu()
+		self:ShowAuraFrames()
 	end
 end
 
 --- Hide all bars
---- @param frames boolean|nil If true, also hide frame containers and micro menu
+--- @param frames boolean|nil If true, also hide frame containers, micro menu, and aura frames
 function addon:HideBars(frames)
 	self:ResumeCallbacks()
 	for bar_name, bar in pairs(self.bars) do
 		self:ApplyOnBar(bar, bar_name)
 		self:SetBlingRender(bar_name, false)
 	end
-	-- Also hide frame containers and micro menu
+	-- Also hide frame containers, micro menu, and aura frames
 	if frames then
 		self:HideFrameContainers()
 		self:HideMicroMenu()
+		self:HideAuraFrames()
 	end
 end
 
 --- Toggle bar visibility and (un)register grid events
 function addon:ToggleBars()
 	if addon.enabled then
-		self:ShowBars()
+		self:ShowBars(true)
 		self:UnregisterAllEvents()
 	else
-		self:HideBars()
+		self:HideBars(true)
 		self:RegisterEvent("ACTIONBAR_SHOWGRID")
 		self:RegisterEvent("ACTIONBAR_HIDEGRID")
 		-- Skyriding events
@@ -503,6 +505,7 @@ end
 
 --- Hook frame containers (bags bar)
 function addon:HookFrameContainers()
+	if not self.db.BagsBar then return end
 	for container_name, container in pairs(self.containers) do
 		-- Apply initial alpha to container
 		self:ApplyOnFrameContainer(container, container_name)
@@ -621,6 +624,7 @@ end
 
 --- Hook micro menu
 function addon:HookMicroMenu()
+	if not self.db.MicroButtons then return end
 	-- Apply initial alpha to all micro buttons
 	self:ApplyOnMicroMenu()
 	-- Hook all micro buttons to trigger shared fade
@@ -664,6 +668,137 @@ function addon:HandleGameMenuHide()
 	end
 end
 
+-- Aura Frame Functions (for BuffFrame/DebuffFrame)
+-----------------------------------------------------------
+
+--- Apply alpha to an aura frame
+---@param frame_name string Name of the aura frame ("BuffFrame" or "DebuffFrame")
+function addon:ApplyOnAuraFrame(frame_name)
+	local frame = self.aura_frames[frame_name]
+	if (frame == nil) then return end
+	if (self.db[frame_name]) then
+		frame:SetAlpha(addon.db.AlphaMin)
+	else
+		frame:SetAlpha(1)
+	end
+end
+
+--- Apply fade-in for aura frame using timers
+---@param frame_name string Name of the aura frame
+function addon:FadeInAuraFrameTimer(frame_name)
+	local alpha = addon.fades[frame_name]
+	if alpha == nil then
+		alpha = addon.db["AlphaMin"]
+		addon.fades[frame_name] = alpha
+	end
+	local timer = addon:Timer(function()
+		alpha = alpha + addon.db.FadeInAlphaStep
+		if alpha >= addon.db["AlphaMax"] then
+			addon:CancelTimer(frame_name, true)
+			alpha = addon.db["AlphaMax"]
+		end
+		addon.fades[frame_name] = alpha
+		self.aura_frames[frame_name]:SetAlpha(alpha)
+	end, (addon.db["FadeInDelay"] or 0), addon.db["MaxRefreshRate"])
+	return timer
+end
+
+--- Apply fade-out for aura frame using timers
+---@param frame_name string Name of the aura frame
+function addon:FadeOutAuraFrameTimer(frame_name)
+	local alpha = addon.fades[frame_name]
+	if alpha == nil then
+		alpha = addon.db["AlphaMax"]
+		addon.fades[frame_name] = alpha
+	end
+	local timer = addon:Timer(function()
+		alpha = alpha - addon.db.FadeOutAlphaStep
+		if alpha <= addon.db["AlphaMin"] then
+			addon:CancelTimer(frame_name)
+			alpha = addon.db["AlphaMin"]
+		end
+		addon.fades[frame_name] = alpha
+		self.aura_frames[frame_name]:SetAlpha(alpha)
+	end, (addon.db["FadeOutDelay"] or 0), addon.db["MaxRefreshRate"])
+	return timer
+end
+
+--- Fades aura frame with a given transition
+---@param transition "FadeIn"|"FadeOut"
+---@param frame_name string Name of the aura frame
+function addon:FadeAuraFrame(transition, frame_name)
+	--@debug@
+	assert(transition == "FadeIn" or transition == "FadeOut", "Unknown transition")
+	--@end-debug@
+
+	if self.db[frame_name] then
+		if transition == "FadeIn" then
+			addon.timers[frame_name] = addon:FadeInAuraFrameTimer(frame_name)
+		else
+			addon.timers[frame_name] = addon:FadeOutAuraFrameTimer(frame_name)
+		end
+		addon.timers[frame_name].name = transition
+	end
+end
+
+--- Securely hooks into an aura button's OnEnter and OnLeave to show/hide the aura frame.
+---@param button Button Aura button frame on which to hook
+---@param frame_name string Name of the aura frame ("BuffFrame" or "DebuffFrame")
+function addon:SecureHookAuraButton(button, frame_name)
+	button:HookScript("OnEnter", function()
+		if not addon.enabled then return end
+		addon:CancelTimer(frame_name)
+		addon:FadeAuraFrame("FadeIn", frame_name)
+	end)
+
+	button:HookScript("OnLeave", function()
+		if not addon.enabled then return end
+		local timer = addon.timers[frame_name]
+		if (timer and not timer.cancelled and timer.name == "FadeIn") then
+			timer.post_call = function() addon:FadeAuraFrame("FadeOut", frame_name) end
+		else
+			addon:FadeAuraFrame("FadeOut", frame_name)
+		end
+	end)
+end
+
+--- Hook an aura frame and its buttons
+---@param frame_name string Name of the aura frame ("BuffFrame" or "DebuffFrame")
+function addon:HookAuraFrame(frame_name)
+	if not self.db[frame_name] then return end
+	self:ApplyOnAuraFrame(frame_name)
+	local buttons = self.aura_buttons[frame_name]
+	if buttons then
+		for _, button in ipairs(buttons) do
+			self:SecureHookAuraButton(button, frame_name)
+		end
+	end
+	-- Also hook the CollapseAndExpandButton on BuffFrame
+	local frame = self.aura_frames[frame_name]
+	if frame and frame.CollapseAndExpandButton then
+		self:SecureHookAuraButton(frame.CollapseAndExpandButton, frame_name)
+	end
+	-- Also hook ConsolidatedBuffs on BuffFrame
+	if frame and frame.ConsolidatedBuffs then
+		self:SecureHookAuraButton(frame.ConsolidatedBuffs, frame_name)
+	end
+end
+
+--- Show all aura frames
+function addon:ShowAuraFrames()
+	for frame_name, frame in pairs(self.aura_frames) do
+		self:CancelTimer(frame_name)
+		frame:SetAlpha(1)
+	end
+end
+
+--- Hide all aura frames
+function addon:HideAuraFrames()
+	for frame_name, _ in pairs(self.aura_frames) do
+		self:ApplyOnAuraFrame(frame_name)
+	end
+end
+
 --- Re-apply alpha to all UI elements if enabled
 function addon:RefreshAlpha()
 	if not addon.enabled then return end
@@ -678,5 +813,9 @@ function addon:RefreshAlpha()
 
 	if self.db.MicroButtons then
 		self:ApplyOnMicroMenu()
+	end
+
+	for frame_name, _ in pairs(self.aura_frames) do
+		self:ApplyOnAuraFrame(frame_name)
 	end
 end

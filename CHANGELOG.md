@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. Be aware th
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- The Buff Frame and Debuff Frame now support mouseover (closes [#13](https://github.com/AvyAddons/BlizzardBars_Mouseover/issues/13))
+
 ### Fixed
 - Fade Guild micro button alongside others
 

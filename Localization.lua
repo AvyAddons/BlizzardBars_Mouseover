@@ -98,6 +98,11 @@ end)({
 		["Fade-out transparency"] = true,
 		["Transparency of the action bar when fully faded in"] = true,
 		["Transparency of the action bar when fully faded out"] = true,
+		["Auras"] = true,
+		["Buff Frame"] = true,
+		["Debuff Frame"] = true,
+		["Toggle mouseover for the buff frame"] = true,
+		["Toggle mouseover for the debuff frame"] = true,
 	},
 	["deDE"] = {},
 	["esES"] = {},
@@ -159,6 +164,11 @@ end)({
 		"Прозрачность панели команд в полностью видимом состоянии",
 		["Transparency of the action bar when fully faded out"] =
 		"Прозрачность панели команд в полностью скрытом состоянии",
+		["Auras"] = "Ауры",
+		["Buff Frame"] = "Баффы",
+		["Debuff Frame"] = "Дебаффы",
+		["Toggle mouseover for the buff frame"] = "Появление баффов при наведении мыши",
+		["Toggle mouseover for the debuff frame"] = "Появление дебаффов при наведении мыши",
 	},
 	["zhCN"] = {},
 	["zhTW"] = {}
