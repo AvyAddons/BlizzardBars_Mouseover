@@ -18,5 +18,21 @@
     "./.libraries/"
   ],
   "workspace.ignoreDir": [".vscode", "./.libraries"],
-  "diagnostics.globals": ["C_Timer", "UIParent", "UnitInVehicle", "UnitOnTaxi"]
+  "diagnostics.globals": [
+    "C_Timer",
+    "CreateFrame",
+    "CreateSettingsListSectionHeaderInitializer",
+    "EventRegistry",
+    "FormatPercentage",
+    "GetLocale",
+    "hooksecurefunc",
+    "IsLoggedIn",
+    "MinimalSliderWithSteppersMixin",
+    "Settings",
+    "SlashCmdList",
+    "UIParent",
+    "UnitInVehicle",
+    "UnitOnTaxi",
+    "UnitPowerBarID"
+  ]
 }
