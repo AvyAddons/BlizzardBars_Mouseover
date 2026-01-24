@@ -615,6 +615,17 @@ function addon:HookMicroMenu()
 	for _, button in ipairs(self.frame_button_refs.MicroButtons) do
 		self:SecureHookMicroMenu(button)
 	end
+	-- Hook UpdateMicroButton on HousingMicroButton to re-apply alpha after Blizzard resets it
+	-- HousingMicroButton:UpdateMicroButton() calls Enable() which sets alpha to 1
+	local housingButton = _G["HousingMicroButton"]
+	if housingButton and housingButton.UpdateMicroButton then
+		hooksecurefunc(housingButton, "UpdateMicroButton", function(button)
+			if addon.enabled and addon.db.MicroButtons then
+				local alpha = addon.fades["MicroButtons"] or addon.db["AlphaMin"]
+				button:SetAlpha(alpha)
+			end
+		end)
+	end
 end
 
 --- Show all micro menu buttons
