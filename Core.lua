@@ -658,3 +658,20 @@ function addon:HandleGameMenuHide()
 		addon:ApplyOnMicroMenu()
 	end
 end
+
+--- Re-apply alpha to all UI elements if enabled
+function addon:RefreshAlpha()
+	if not addon.enabled then return end
+
+	for bar_name, bar in pairs(self.bars) do
+		self:ApplyOnBar(bar, bar_name)
+	end
+
+	for container_name, container in pairs(self.containers) do
+		self:ApplyOnFrameContainer(container, container_name)
+	end
+
+	if self.db.MicroButtons then
+		self:ApplyOnMicroMenu()
+	end
+end

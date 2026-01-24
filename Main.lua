@@ -251,7 +251,13 @@ function addon:OnEnable()
 	-- Same thing for Edit Mode
 	-- These cause a small hicup if we call it instantly. So a tiny delay fixes that
 	EditModeManagerFrame:HookScript("OnShow", function() C_TimerAfter(0.05, function() addon:ShowBars(true) end) end)
-	EditModeManagerFrame:HookScript("OnHide", function() C_TimerAfter(0.05, function() addon:HideBars(true) end) end)
+	EditModeManagerFrame:HookScript("OnHide", function()
+		-- Use longer delays than OnShow (0.05s) to guarantee execution order
+		C_TimerAfter(0.10, function() addon:HideBars(true) end)
+		-- Secondary refresh to catch programmatic show/hide from addons like BetterCooldownManager
+		-- that open and immediately close the EditMode frame, which could cause race conditions
+		C_TimerAfter(0.20, function() addon:RefreshAlpha() end)
+	end)
 
 	-- Flyouts are more complicated, but we wanna show the parent bar while they're open
 	SpellFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow() end)
