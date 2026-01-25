@@ -610,31 +610,25 @@ function addon:SecureHookMicroMenu(frame)
 	end)
 end
 
---- Safely hook buttons that update via events very frequently
-local function hookMicroButtonUpdate(button)
-	if button and button.UpdateMicroButton then
-		hooksecurefunc(button, "UpdateMicroButton", function(btn)
+--- Hook micro menu
+function addon:HookMicroMenu()
+	if not self.db.MicroButtons then return end
+	-- Apply initial alpha to all micro buttons
+	self:ApplyOnMicroMenu()
+	-- Hook all micro buttons to trigger shared fade and handle OnEnable alpha resets
+	for _, button in ipairs(self.frame_button_refs.MicroButtons) do
+		self:SecureHookMicroMenu(button)
+		-- Hook OnEnable to re-apply alpha when Blizzard enables the button
+		-- MainMenuBarMicroButtonMixin:OnEnable() sets alpha to 1, which can be triggered
+		-- from various events (PLAYER_ENTERING_WORLD, INITIAL_CLUBS_LOADED, etc.)
+		-- without going through UpdateMicroButton()
+		button:HookScript("OnEnable", function(btn)
 			if addon.enabled and addon.db.MicroButtons then
 				local alpha = addon.fades["MicroButtons"] or addon.db["AlphaMin"]
 				btn:SetAlpha(alpha)
 			end
 		end)
 	end
-end
-
---- Hook micro menu
-function addon:HookMicroMenu()
-	if not self.db.MicroButtons then return end
-	-- Apply initial alpha to all micro buttons
-	self:ApplyOnMicroMenu()
-	-- Hook all micro buttons to trigger shared fade
-	for _, button in ipairs(self.frame_button_refs.MicroButtons) do
-		self:SecureHookMicroMenu(button)
-	end
-	-- Hook UpdateMicroButton on buttons that reset alpha via Enable()
-	-- These buttons call UpdateMicroButton() which calls Enable() which sets alpha to 1
-	hookMicroButtonUpdate(_G["HousingMicroButton"])
-	hookMicroButtonUpdate(_G["GuildMicroButton"])
 end
 
 --- Show all micro menu buttons

@@ -91,18 +91,18 @@ addon.frame_buttons = {
 	},
 	MicroButtons = {
 		"CharacterMicroButton",
-		"PlayerSpellsMicroButton",
 		"ProfessionMicroButton",
+		"PlayerSpellsMicroButton",
 		"AchievementMicroButton",
 		"QuestLogMicroButton",
 		"HousingMicroButton",
 		"GuildMicroButton",
-		"LFDMicroButton",
+		"LFDMicroButton", -- Looking for Group
+		"EJMicroButton", -- Adventure Guide
 		"CollectionsMicroButton",
-		"EJMicroButton",
-		"QuickJoinToastButton",
 		"StoreMicroButton",
 		"MainMenuMicroButton",
+		"QuickJoinToastButton", -- Friends list / Quick Join button (lower left)
 		-- "QueueStatusButton", -- LFG status, don't hide
 	},
 }
