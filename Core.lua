@@ -14,7 +14,7 @@ local string_find = string.find
 -- Up-value any WoW functions used here.
 local _G = _G
 local C_TimerAfter = _G.C_Timer.After
-local UnitPowerBarID = _G.UnitPowerBarID
+local C_PlayerInfo_GetGlidingInfo = _G.C_PlayerInfo.GetGlidingInfo
 ---@type Frame
 local SpellFlyout = _G["SpellFlyout"]
 
@@ -302,8 +302,7 @@ function addon:ToggleBars()
 		self:RegisterEvent("ACTIONBAR_HIDEGRID")
 		-- Skyriding events
 		self:RegisterEvent("PLAYER_ENTERING_WORLD")
-		self:RegisterEvent("UNIT_POWER_BAR_SHOW")
-		self:RegisterEvent("UNIT_POWER_BAR_HIDE")
+		self:RegisterEvent("PLAYER_CAN_GLIDE_CHANGED")
 		-- Vehicle events
 		self:RegisterEvent("UNIT_ENTERED_VEHICLE")
 		self:RegisterEvent("UNIT_EXITED_VEHICLE")
@@ -314,20 +313,17 @@ end
 
 --- Show main vehicle bar when skyriding
 ---@param event FrameEvent|nil Event name
----@param isInitialLogin boolean|nil Only defined when event is 'PLAYER_ENTERING_WORLD'
-function addon:Skyriding(event, isInitialLogin)
+---@param canGlide boolean|nil Only defined when event is 'PLAYER_CAN_GLIDE_CHANGED'
+function addon:Skyriding(event, canGlide)
 	if (not addon.enabled or not addon.db.Skyriding) then
 		return
 	end
 
-	if event == "PLAYER_ENTERING_WORLD" and isInitialLogin == true then
-		C_Timer.After(2, addon.Skyriding)
-		return
+	if event ~= "PLAYER_CAN_GLIDE_CHANGED" then
+		canGlide = select(2, C_PlayerInfo_GetGlidingInfo())
 	end
 
-	-- shamelessly copied from WeakAuras
-	-- https://github.com/WeakAuras/WeakAuras2/blob/main/WeakAuras/Dragonriding.lua
-	addon.skyriding = UnitPowerBarID("player") == 631
+	addon.skyriding = canGlide
 	if (addon.skyriding) then
 		-- show main bar
 		addon.bars[MAIN_BAR]:SetAlpha(1)

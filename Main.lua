@@ -132,7 +132,7 @@ addon.bypass = nil
 --- @param event FrameEvent The name of the event that fired.
 --- @param ... unknown Any payloads passed by the event handlers.
 function addon:OnEvent(event, ...)
-	if (event == "PLAYER_ENTERING_WORLD" or event == "UNIT_POWER_BAR_SHOW" or event == "UNIT_POWER_BAR_HIDE") then
+	if (event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_CAN_GLIDE_CHANGED") then
 		self:Skyriding(event, ...)
 	end
 	if (event == "PLAYER_ENTERING_WORLD"
@@ -244,9 +244,9 @@ end
 -- This fires when most of the user interface has been loaded
 -- and most data is available to the user.
 function addon:OnEnable()
+	-- Skyriding events
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	self:RegisterEvent("UNIT_POWER_BAR_SHOW")
-	self:RegisterEvent("UNIT_POWER_BAR_HIDE")
+	self:RegisterEvent("PLAYER_CAN_GLIDE_CHANGED")
 
 	-- Vehicle events
 	self:RegisterEvent("UNIT_ENTERED_VEHICLE")
