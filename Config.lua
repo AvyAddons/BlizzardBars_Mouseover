@@ -49,12 +49,57 @@ addon.db = {
 	FadeInAlphaStep = 0.1,
 	FadeOutAlphaStep = 0.1,
 }
+-- Snapshot the default values before addon.db is ever reassigned to a profile sub-table.
+-- Used to fill in missing keys when a profile is loaded or newly created.
+addon.defaults = addon.db
+
+-- Registered settings objects keyed by variableKey, used for in-place UI refresh on profile switch
+addon.registeredSettings = {}
+
+-- Static popup for creating a new profile
+StaticPopupDialogs["BBM_NEW_PROFILE"] = {
+	text = "Enter a name for the new profile:",
+	button1 = "Create",
+	button2 = CANCEL,
+	hasEditBox = true,
+	OnAccept = function(self)
+		local name = self.EditBox:GetText()
+		if name and name ~= "" then
+			addon:CreateProfile(name)
+		end
+	end,
+	EditBoxOnEnterPressed = function(self)
+		local parent = self:GetParent()
+		local name = parent.EditBox:GetText()
+		if name and name ~= "" then
+			addon:CreateProfile(name)
+		end
+		parent:Hide()
+	end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+}
+
+StaticPopupDialogs["BBM_DELETE_PROFILE"] = {
+	text = 'Delete profile "%s"?',
+	button1 = DELETE,
+	button2 = CANCEL,
+	OnAccept = function(self, data)
+		addon:DeleteProfile(data)
+	end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+}
+
 addon.settings = {
 	actionBarsProxy = {
 		{
 			name = L["Action Bar 1"],
 			tooltip = L["Toggle mouseover for the main action bar"],
 			variable = addon.shortName .. "_MainBar",
+			variableKey = "MainActionBar",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -70,6 +115,7 @@ addon.settings = {
 			name = L["Action Bar 2"],
 			tooltip = L["Toggle mouseover for the bottom left action bar"],
 			variable = addon.shortName .. "_Bar2",
+			variableKey = "MultiBarBottomLeft",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -84,6 +130,7 @@ addon.settings = {
 			name = L["Action Bar 3"],
 			tooltip = L["Toggle mouseover for the bottom right action bar"],
 			variable = addon.shortName .. "_Bar3",
+			variableKey = "MultiBarBottomRight",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -98,6 +145,7 @@ addon.settings = {
 			name = L["Action Bar 4"],
 			tooltip = L["Toggle mouseover for the right action bar"],
 			variable = addon.shortName .. "_Bar4",
+			variableKey = "MultiBarRight",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -112,6 +160,7 @@ addon.settings = {
 			name = L["Action Bar 5"],
 			tooltip = L["Toggle mouseover for the left action bar"],
 			variable = addon.shortName .. "_Bar5",
+			variableKey = "MultiBarLeft",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -126,6 +175,7 @@ addon.settings = {
 			name = L["Action Bar 6"],
 			tooltip = L["Toggle mouseover for the action bar 6"],
 			variable = addon.shortName .. "_Bar6",
+			variableKey = "MultiBar5",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -140,6 +190,7 @@ addon.settings = {
 			name = L["Action Bar 7"],
 			tooltip = L["Toggle mouseover for the action bar 7"],
 			variable = addon.shortName .. "_Bar7",
+			variableKey = "MultiBar6",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -154,6 +205,7 @@ addon.settings = {
 			name = L["Action Bar 8"],
 			tooltip = L["Toggle mouseover for the action bar 8"],
 			variable = addon.shortName .. "_Bar8",
+			variableKey = "MultiBar7",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -168,6 +220,7 @@ addon.settings = {
 			name = L["Stance Bar"],
 			tooltip = L["Toggle mouseover for the stance bar"],
 			variable = addon.shortName .. "_StanceBar",
+			variableKey = "StanceBar",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -182,6 +235,7 @@ addon.settings = {
 			name = L["Pet Action Bar"],
 			tooltip = L["Toggle mouseover for the pet action bar"],
 			variable = addon.shortName .. "_PetBar",
+			variableKey = "PetActionBar",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -201,6 +255,8 @@ addon.settings = {
 			variableKey = "LinkActionBars",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.False,
+			GetValue = function() return addon.db.LinkActionBars end,
+			SetValue = function(value) addon.db.LinkActionBars = value end,
 		},
 		{
 			name = L["Show while Skyriding"],
@@ -209,6 +265,8 @@ addon.settings = {
 			variableKey = "Skyriding",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
+			GetValue = function() return addon.db.Skyriding end,
+			SetValue = function(value) addon.db.Skyriding = value end,
 		},
 		{
 			name = L["Show Vehicle Exit Button"],
@@ -218,6 +276,8 @@ addon.settings = {
 			variableKey = "Vehicle",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
+			GetValue = function() return addon.db.Vehicle end,
+			SetValue = function(value) addon.db.Vehicle = value end,
 		}
 	},
 	bagsSettings = {
@@ -225,6 +285,7 @@ addon.settings = {
 			name = L["Bags Bar"],
 			tooltip = L["Toggle mouseover for the bags bar"],
 			variable = addon.shortName .. "_BagsBar",
+			variableKey = "BagsBar",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -246,6 +307,7 @@ addon.settings = {
 			name = L["Micro Buttons"],
 			tooltip = L["Toggle mouseover for the micro menu buttons"],
 			variable = addon.shortName .. "_MicroButtons",
+			variableKey = "MicroButtons",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.True,
 			GetValue = function()
@@ -267,6 +329,7 @@ addon.settings = {
 			name = L["Buff Frame"],
 			tooltip = L["Toggle mouseover for the buff frame"],
 			variable = addon.shortName .. "_BuffFrame",
+			variableKey = "BuffFrame",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.False,
 			GetValue = function()
@@ -286,6 +349,7 @@ addon.settings = {
 			name = L["Debuff Frame"],
 			tooltip = L["Toggle mouseover for the debuff frame"],
 			variable = addon.shortName .. "_DebuffFrame",
+			variableKey = "DebuffFrame",
 			type = Settings.VarType.Boolean,
 			defaultValue = Settings.Default.False,
 			GetValue = function()
@@ -403,6 +467,103 @@ function addon:MigrateDB()
 	end
 end
 
+--- Apply the active profile to all bars and UI elements
+function addon:ApplyProfile()
+	self:ComputeValues()
+	for bar_name, bar in pairs(self.bars) do
+		self:ApplyOnBar(bar, bar_name)
+	end
+	for container_name, container in pairs(self.containers) do
+		self:ApplyOnFrameContainer(container, container_name)
+	end
+	self:ApplyOnMicroMenu()
+	for frame_name in pairs(self.aura_frames) do
+		self:ApplyOnAuraFrame(frame_name)
+	end
+end
+
+--- Refreshes all registered setting widgets in-place to reflect the active profile.
+--- Must be called after addon.db is reassigned to a new profile sub-table.
+---
+--- Uses setting:SetValue() (the method on the setting object) rather than Settings.SetValue().
+--- Settings.SetValue() calls our SetValue callback and writes to db — the wrong direction.
+--- setting:SetValue() fires the internal changed event so the widget redraws without a side-effect.
+function addon:RefreshSettingsUI()
+	for variableKey, setting in pairs(self.registeredSettings) do
+		if variableKey == "_activeProfile" then
+			-- The profile dropdown value lives in sv (top-level), not in the profile sub-table (db)
+			setting:SetValue(self.sv.activeProfile or "Default")
+		else
+			local val = addon.db[variableKey]
+			if val ~= nil then
+				setting:SetValue(val)
+			end
+		end
+	end
+end
+
+--- Returns a sorted list of profile names
+---@return string[]
+function addon:GetProfileList()
+	local list = {}
+	for name in pairs(self.sv.profiles) do
+		list[#list + 1] = name
+	end
+	table.sort(list)
+	return list
+end
+
+--- Creates a new profile as a copy of the current one and switches to it
+---@param name string
+function addon:CreateProfile(name)
+	if self.sv.profiles[name] then return end
+	local newProfile = {}
+	for key, val in pairs(self.db) do
+		newProfile[key] = val
+	end
+	self.sv.profiles[name] = newProfile
+	self:SetActiveProfile(name)
+end
+
+--- Switches the active profile, fills in missing defaults, reapplies all bars,
+--- and refreshes the settings UI in-place without closing the panel.
+---@param profileName string
+function addon:SetActiveProfile(profileName)
+	if not self.sv.profiles[profileName] then return end
+	local profile = self.sv.profiles[profileName]
+	-- Fill in any keys that are missing from the profile (e.g. newly added settings after an update)
+	for key, val in pairs(self.defaults) do
+		if profile[key] == nil then profile[key] = val end
+	end
+	self.sv.activeProfile = profileName
+	self.db = profile
+	self:ApplyProfile()
+	if self.configInitialized then
+		self:RefreshSettingsUI()
+	end
+end
+
+--- Deletes a profile and falls back to Default if it was the active one
+---@param name string
+function addon:DeleteProfile(name)
+	if name == "Default" then return end
+	if not self.sv.profiles[name] then return end
+	-- Clear any character assignments pointing to this profile
+	for key, profileName in pairs(self.sv.characterProfiles) do
+		if profileName == name then
+			self.sv.characterProfiles[key] = nil
+		end
+	end
+	self.sv.profiles[name] = nil
+	-- If the deleted profile was active, fall back to Default
+	if self.sv.activeProfile == name then
+		self:SetActiveProfile("Default")
+	elseif self.configInitialized then
+		self:RefreshSettingsUI()
+	end
+end
+
+
 --- Compute option values
 function addon:ComputeValues()
 	local alphaRange = math_abs(self.db.AlphaMax - self.db.AlphaMin)
@@ -431,6 +592,19 @@ function addon:RoundToNearestPercentile(value)
 	return val / 100
 end
 
+--- Helper to register a setting and store it for in-place UI refresh
+---@param category any
+---@param s table setting definition with variable, variableKey, type, name, defaultValue, GetValue, SetValue
+---@return any setting
+local function RegisterAndStore(category, s)
+	local setting = Settings.RegisterProxySetting(
+		category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
+	if s.variableKey then
+		addon.registeredSettings[s.variableKey] = setting
+	end
+	return setting
+end
+
 --- Create the in-game addon option window
 function addon:CreateConfigPanel()
 	local category, layout = Settings.RegisterVerticalLayoutCategory(addon.shortName)
@@ -440,37 +614,78 @@ function addon:CreateConfigPanel()
 		return string.format("%.1fs", value)
 	end
 
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Action Bars"])); -- weird way to say "Add a header to the list"
+	-- Profiles section
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Profiles"]))
+
+	local profileGetValue = function()
+		return addon.sv.activeProfile or "Default"
+	end
+	local profileSetValue = function(value)
+		if addon.charKey then
+			-- Assign this profile to the current character; nil clears the override (falls back to activeProfile)
+			addon.sv.characterProfiles[addon.charKey] = value ~= "Default" and value or nil
+		end
+		addon:SetActiveProfile(value)
+	end
+	local profileSetting = Settings.RegisterProxySetting(
+		category, addon.shortName .. "_Profile", Settings.VarType.String,
+		L["Active Profile"], "Default", profileGetValue, profileSetValue)
+	addon.registeredSettings["_activeProfile"] = profileSetting
+	local function GetProfileOptions()
+		local container = Settings.CreateControlTextContainer()
+		for _, name in ipairs(addon:GetProfileList()) do
+			container:Add(name, name)
+		end
+		return container:GetData()
+	end
+	Settings.CreateDropdown(category, profileSetting, GetProfileOptions, L["Switch the active settings profile"])
+
+	layout:AddInitializer(CreateSettingsButtonInitializer(
+		L["New Profile"] or "New Profile",
+		L["New Profile"] or "New Profile",
+		function() StaticPopup_Show("BBM_NEW_PROFILE") end,
+		L["Create a new profile as a copy of the current one"] or "Create a new profile as a copy of the current one",
+		false
+	))
+
+	-- Delete profile button — clicking on Default silently does nothing
+	layout:AddInitializer(CreateSettingsButtonInitializer(
+		L["Delete Profile"] or "Delete Profile",
+		L["Delete Profile"] or "Delete Profile",
+		function()
+			local current = addon.sv.activeProfile
+			if current == "Default" then return end
+			StaticPopup_Show("BBM_DELETE_PROFILE", current, nil, current)
+		end,
+		L["Delete the current profile (not available for Default)"] or "Delete the current profile (not available for Default)",
+		false
+	))
+
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Action Bars"]))
 	for _, s in ipairs(addon.settings.actionBarsProxy) do
-		local setting = Settings.RegisterProxySetting(
-			category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
+		local setting = RegisterAndStore(category, s)
 		Settings.CreateCheckbox(category, setting, s.tooltip)
 	end
 	for _, s in ipairs(addon.settings.actionBars) do
-		-- the variable table must be the global saved variables table, the reference with addon.db does not work
-		local setting = Settings.RegisterAddOnSetting(
-			category, s.variable, s.variableKey, _G[addonName .. "_DB"], s.type, s.name, s.defaultValue)
+		local setting = RegisterAndStore(category, s)
 		Settings.CreateCheckbox(category, setting, s.tooltip)
 	end
 
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Bags"]));
 	for _, s in ipairs(addon.settings.bagsSettings) do
-		local setting = Settings.RegisterProxySetting(
-			category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
+		local setting = RegisterAndStore(category, s)
 		Settings.CreateCheckbox(category, setting, s.tooltip)
 	end
 
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Micro Menu"]));
 	for _, s in ipairs(addon.settings.microMenuSettings) do
-		local setting = Settings.RegisterProxySetting(
-			category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
+		local setting = RegisterAndStore(category, s)
 		Settings.CreateCheckbox(category, setting, s.tooltip)
 	end
 
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Auras"]));
 	for _, s in ipairs(addon.settings.auraSettings) do
-		local setting = Settings.RegisterProxySetting(
-			category, s.variable, s.type, s.name, s.defaultValue, s.GetValue, s.SetValue)
+		local setting = RegisterAndStore(category, s)
 		Settings.CreateCheckbox(category, setting, s.tooltip)
 	end
 
@@ -485,6 +700,7 @@ function addon:CreateConfigPanel()
 		end
 		local setting = Settings.RegisterProxySetting(
 			category, s.variable, s.type, s.name, s.defaultValue, GetValue, SetValue)
+		addon.registeredSettings[s.variableKey] = setting
 		local options = Settings.CreateSliderOptions(s.minValue, s.maxValue, s.step);
 		options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, FormatSeconds);
 		Settings.CreateSlider(category, setting, options, s.tooltip)
@@ -504,6 +720,7 @@ function addon:CreateConfigPanel()
 		end
 		local setting = Settings.RegisterProxySetting(
 			category, s.variable, s.type, s.name, s.defaultValue, GetValue, SetValue)
+		addon.registeredSettings[s.variableKey] = setting
 		local options = Settings.CreateSliderOptions(s.minValue, s.maxValue, s.step);
 		options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, FormatPercentage);
 		Settings.CreateSlider(category, setting, options, s.tooltip)
@@ -517,4 +734,5 @@ function addon:InitializeConfig()
 	-- we sometimes change the options, hence the need to migrate tables
 	self:MigrateDB()
 	self:CreateConfigPanel()
+	self.configInitialized = true
 end
