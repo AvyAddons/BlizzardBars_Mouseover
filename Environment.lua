@@ -15,6 +15,8 @@ local string_split = string.split
 -----------------------------------------------------------
 -- Up-value any WoW functions used here.
 local _G = _G
+local GetRealmName = _G.GetRealmName
+local UnitName = _G.UnitName
 ---@type table<string, function>
 local SlashCmdList = _G["SlashCmdList"]
 
@@ -94,15 +96,41 @@ addon.eventFrame:SetScript("OnEvent", function(self, event, ...)
 			-- Note that you are free to re-register it in any of the
 			-- addon namespace methods.
 			addon.eventFrame:UnregisterEvent("ADDON_LOADED")
-			-- Initialize our saved variables, or use defaults if empty
-			if (type(_G[addonName .. "_DB"]) ~= "table") then _G[addonName .. "_DB"] = {} end
-			local db = _G[addonName .. "_DB"]
-			for key in pairs(addon.db) do
-				--  If our option is not present, set default value
-				if (db[key] == nil) then db[key] = addon.db[key] end
+			-- Initialize saved variables structure
+			local DB_KEY = addonName .. "_DB"
+			if type(_G[DB_KEY]) ~= "table" then _G[DB_KEY] = {} end
+			local sv = _G[DB_KEY]
+
+			-- Migrate from old flat format to new profile structure (one-time, on first load after update)
+			if sv.profiles == nil then
+				-- Collect any flat settings that exist (may be empty on fresh install)
+				local oldFlat = {}
+				for key, val in pairs(sv) do
+					oldFlat[key] = val
+					sv[key] = nil
+				end
+				sv.profiles = { ["Default"] = oldFlat }
+				sv.characterProfiles = {}
+				sv.activeProfile = "Default"
 			end
-			-- Update our reference so that changed options are saved on logout
-			addon.db = db
+			-- Ensure required top-level keys are present (guards against partial data)
+			if type(sv.profiles) ~= "table" then sv.profiles = {} end
+			if type(sv.characterProfiles) ~= "table" then sv.characterProfiles = {} end
+			if sv.activeProfile == nil then sv.activeProfile = "Default" end
+			-- Ensure Default profile always exists
+			if type(sv.profiles["Default"]) ~= "table" then sv.profiles["Default"] = {} end
+
+			addon.sv = sv
+
+			-- Ensure the active profile table exists and has all defaults filled in
+			local profileName = sv.activeProfile
+			if type(sv.profiles[profileName]) ~= "table" then sv.profiles[profileName] = {} end
+			local profile = sv.profiles[profileName]
+			for key, val in pairs(addon.db) do
+				if profile[key] == nil then profile[key] = val end
+			end
+			-- Point addon.db directly at the active profile sub-table
+			addon.db = profile
 			-- Initialize config
 			if (addon.InitializeConfig) then
 				addon:InitializeConfig()
@@ -114,6 +142,19 @@ addon.eventFrame:SetScript("OnEvent", function(self, event, ...)
 			-- If this was a load-on-demand addon, then we might be logged in already.
 			-- If that is the case, directly run the enabling method.
 			if (IsLoggedIn()) then
+				-- Character is available: resolve character-specific profile assignment
+				local charKey = UnitName("player") .. "-" .. GetRealmName()
+				addon.charKey = charKey
+				local charProfile = sv.characterProfiles[charKey]
+				if charProfile then
+					if type(sv.profiles[charProfile]) == "table" then
+						sv.activeProfile = charProfile
+						addon.db = sv.profiles[charProfile]
+					else
+						-- Profile was deleted, clear the stale assignment
+						sv.characterProfiles[charKey] = nil
+					end
+				end
 				if (addon.OnEnable) then
 					addon:OnEnable()
 				end
@@ -132,6 +173,20 @@ addon.eventFrame:SetScript("OnEvent", function(self, event, ...)
 		-- and anything you wish done at this event,
 		-- should be put in the namespace enable method.
 		addon.eventFrame:UnregisterEvent("PLAYER_LOGIN")
+		-- Resolve character-specific profile assignment
+		local charKey = UnitName("player") .. "-" .. GetRealmName()
+		addon.charKey = charKey
+		local sv = addon.sv
+		local charProfile = sv.characterProfiles[charKey]
+		if charProfile then
+			if type(sv.profiles[charProfile]) == "table" then
+				sv.activeProfile = charProfile
+				addon.db = sv.profiles[charProfile]
+			else
+				-- Profile was deleted, clear the stale assignment
+				sv.characterProfiles[charKey] = nil
+			end
+		end
 		-- Call the enabling method.
 		if (addon.OnEnable) then
 			addon:OnEnable()
