@@ -51,47 +51,10 @@ addon.db = {
 }
 -- Snapshot the default values before addon.db is ever reassigned to a profile sub-table.
 -- Used to fill in missing keys when a profile is loaded or newly created.
-addon.defaults = addon.db
+addon.defaults = CopyTable(addon.db)
 
 -- Registered settings objects keyed by variableKey, used for in-place UI refresh on profile switch
 addon.registeredSettings = {}
-
--- Static popup for creating a new profile
-StaticPopupDialogs["BBM_NEW_PROFILE"] = {
-	text = "Enter a name for the new profile:",
-	button1 = "Create",
-	button2 = CANCEL,
-	hasEditBox = true,
-	OnAccept = function(self)
-		local name = self.EditBox:GetText()
-		if name and name ~= "" then
-			addon:CreateProfile(name)
-		end
-	end,
-	EditBoxOnEnterPressed = function(self)
-		local parent = self:GetParent()
-		local name = parent.EditBox:GetText()
-		if name and name ~= "" then
-			addon:CreateProfile(name)
-		end
-		parent:Hide()
-	end,
-	timeout = 0,
-	whileDead = true,
-	hideOnEscape = true,
-}
-
-StaticPopupDialogs["BBM_DELETE_PROFILE"] = {
-	text = 'Delete profile "%s"?',
-	button1 = DELETE,
-	button2 = CANCEL,
-	OnAccept = function(self, data)
-		addon:DeleteProfile(data)
-	end,
-	timeout = 0,
-	whileDead = true,
-	hideOnEscape = true,
-}
 
 addon.settings = {
 	actionBarsProxy = {
@@ -490,15 +453,15 @@ end
 --- setting:SetValue() fires the internal changed event so the widget redraws without a side-effect.
 function addon:RefreshSettingsUI()
 	for variableKey, setting in pairs(self.registeredSettings) do
-		if variableKey == "_activeProfile" then
-			-- The profile dropdown value lives in sv (top-level), not in the profile sub-table (db)
-			setting:SetValue(self.sv.activeProfile or "Default")
-		else
-			local val = addon.db[variableKey]
-			if val ~= nil then
-				setting:SetValue(val)
-			end
-		end
+		local val = self.db[variableKey]
+		if val ~= nil then setting:SetValue(val) end
+	end
+	if self.profileDropdownSetting then
+		self.profileDropdownSetting:SetValue(self.sv.activeProfile or "Default")
+	end
+	if self.charProfileDropdownSetting then
+		local charProfile = self.charKey and self.sv.characterProfiles[self.charKey]
+		self.charProfileDropdownSetting:SetValue(charProfile or "(Use global default)")
 	end
 end
 
@@ -513,7 +476,7 @@ function addon:GetProfileList()
 	return list
 end
 
---- Creates a new profile as a copy of the current one and switches to it
+--- Creates a new profile as a copy of the current one and assigns it to the current character.
 ---@param name string
 function addon:CreateProfile(name)
 	if self.sv.profiles[name] then return end
@@ -522,20 +485,49 @@ function addon:CreateProfile(name)
 		newProfile[key] = val
 	end
 	self.sv.profiles[name] = newProfile
-	self:SetActiveProfile(name)
+	self:SetCharacterProfile(name)
 end
 
---- Switches the active profile, fills in missing defaults, reapplies all bars,
---- and refreshes the settings UI in-place without closing the panel.
----@param profileName string
-function addon:SetActiveProfile(profileName)
-	if not self.sv.profiles[profileName] then return end
-	local profile = self.sv.profiles[profileName]
-	-- Fill in any keys that are missing from the profile (e.g. newly added settings after an update)
+--- Resolves which profile should be active for the current character and sets addon.db.
+--- Character override (sv.characterProfiles) takes priority over the global default (sv.activeProfile).
+--- Does not write any sv fields; stale character assignments are cleared silently.
+function addon:ResolveCharacterProfile()
+	local sv = self.sv
+	local resolvedName
+	if self.charKey then
+		local charProfile = sv.characterProfiles[self.charKey]
+		if charProfile then
+			if type(sv.profiles[charProfile]) == "table" then
+				resolvedName = charProfile
+			else
+				-- Profile was deleted; clear the stale assignment
+				sv.characterProfiles[self.charKey] = nil
+			end
+		end
+	end
+	if not resolvedName then
+		resolvedName = sv.activeProfile or "Default"
+		if type(sv.profiles[resolvedName]) ~= "table" then resolvedName = "Default" end
+	end
+	local profile = sv.profiles[resolvedName]
 	for key, val in pairs(self.defaults) do
 		if profile[key] == nil then profile[key] = val end
 	end
-	self.sv.activeProfile = profileName
+	self.db = profile
+end
+
+--- Assigns a profile to the current character and switches to it.
+--- Writes sv.characterProfiles[charKey] and reassigns addon.db.
+---@param profileName string
+function addon:SetCharacterProfile(profileName)
+	if not self.sv.profiles[profileName] then return end
+	if self.charKey then
+		self.sv.characterProfiles[self.charKey] = profileName
+	end
+	local profile = self.sv.profiles[profileName]
+	for key, val in pairs(self.defaults) do
+		if profile[key] == nil then profile[key] = val end
+	end
 	self.db = profile
 	self:ApplyProfile()
 	if self.configInitialized then
@@ -543,7 +535,27 @@ function addon:SetActiveProfile(profileName)
 	end
 end
 
---- Deletes a profile and falls back to Default if it was the active one
+--- Sets the global default profile used by characters with no specific assignment.
+--- Writes sv.activeProfile. Updates addon.db only when the current character has no override.
+---@param profileName string
+function addon:SetGlobalDefaultProfile(profileName)
+	if not self.sv.profiles[profileName] then return end
+	self.sv.activeProfile = profileName
+	local hasOverride = self.charKey and self.sv.characterProfiles[self.charKey] ~= nil
+	if not hasOverride then
+		local profile = self.sv.profiles[profileName]
+		for key, val in pairs(self.defaults) do
+			if profile[key] == nil then profile[key] = val end
+		end
+		self.db = profile
+		self:ApplyProfile()
+	end
+	if self.configInitialized then
+		self:RefreshSettingsUI()
+	end
+end
+
+--- Deletes a profile, re-resolves the active profile for the current character.
 ---@param name string
 function addon:DeleteProfile(name)
 	if name == "Default" then return end
@@ -555,10 +567,13 @@ function addon:DeleteProfile(name)
 		end
 	end
 	self.sv.profiles[name] = nil
-	-- If the deleted profile was active, fall back to Default
+	-- If it was the global default, fall back to Default
 	if self.sv.activeProfile == name then
-		self:SetActiveProfile("Default")
-	elseif self.configInitialized then
+		self.sv.activeProfile = "Default"
+	end
+	self:ResolveCharacterProfile()
+	self:ApplyProfile()
+	if self.configInitialized then
 		self:RefreshSettingsUI()
 	end
 end
@@ -617,47 +632,108 @@ function addon:CreateConfigPanel()
 	-- Profiles section
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Profiles"]))
 
-	local profileGetValue = function()
+	-- Per-character profile dropdown
+	local charProfileGetValue = function()
+		local charProfile = addon.charKey and addon.sv.characterProfiles[addon.charKey]
+		return charProfile or "(Use global default)"
+	end
+	local charProfileSetValue = function(value)
+		if value == "(Use global default)" then
+			if addon.charKey then
+				addon.sv.characterProfiles[addon.charKey] = nil
+			end
+			local globalName = addon.sv.activeProfile or "Default"
+			if type(addon.sv.profiles[globalName]) ~= "table" then globalName = "Default" end
+			local profile = addon.sv.profiles[globalName]
+			for key, val in pairs(addon.defaults) do
+				if profile[key] == nil then profile[key] = val end
+			end
+			addon.db = profile
+		else
+			if not addon.sv.profiles[value] then return end
+			if addon.charKey then
+				addon.sv.characterProfiles[addon.charKey] = value
+			end
+			local profile = addon.sv.profiles[value]
+			for key, val in pairs(addon.defaults) do
+				if profile[key] == nil then profile[key] = val end
+			end
+			addon.db = profile
+		end
+		addon:ApplyProfile()
+		if addon.configInitialized then
+			addon:RefreshSettingsUI()
+		end
+	end
+	local charProfileSetting = Settings.RegisterProxySetting(
+		category, addon.shortName .. "_CharProfile", Settings.VarType.String,
+		L["Character Profile"], "(Use global default)", charProfileGetValue, charProfileSetValue)
+	addon.charProfileDropdownSetting = charProfileSetting
+	local function GetCharProfileOptions()
+		local container = Settings.CreateControlTextContainer()
+		container:Add("(Use global default)", L["(Use global default)"])
+		for _, name in ipairs(addon:GetProfileList()) do
+			container:Add(name, name)
+		end
+		return container:GetData()
+	end
+	Settings.CreateDropdown(category, charProfileSetting, GetCharProfileOptions, L["Set which profile this character uses"])
+
+	-- Global default dropdown
+	local globalProfileGetValue = function()
 		return addon.sv.activeProfile or "Default"
 	end
-	local profileSetValue = function(value)
-		if addon.charKey then
-			-- Assign this profile to the current character; nil clears the override (falls back to activeProfile)
-			addon.sv.characterProfiles[addon.charKey] = value ~= "Default" and value or nil
-		end
-		addon:SetActiveProfile(value)
+	local globalProfileSetValue = function(value)
+		addon:SetGlobalDefaultProfile(value)
 	end
-	local profileSetting = Settings.RegisterProxySetting(
-		category, addon.shortName .. "_Profile", Settings.VarType.String,
-		L["Active Profile"], "Default", profileGetValue, profileSetValue)
-	addon.registeredSettings["_activeProfile"] = profileSetting
-	local function GetProfileOptions()
+	local globalProfileSetting = Settings.RegisterProxySetting(
+		category, addon.shortName .. "_GlobalProfile", Settings.VarType.String,
+		L["Global Default Profile"], "Default", globalProfileGetValue, globalProfileSetValue)
+	addon.profileDropdownSetting = globalProfileSetting
+	local function GetGlobalProfileOptions()
 		local container = Settings.CreateControlTextContainer()
 		for _, name in ipairs(addon:GetProfileList()) do
 			container:Add(name, name)
 		end
 		return container:GetData()
 	end
-	Settings.CreateDropdown(category, profileSetting, GetProfileOptions, L["Switch the active settings profile"])
+	Settings.CreateDropdown(category, globalProfileSetting, GetGlobalProfileOptions, L["Set the default profile for characters with no specific assignment"])
 
 	layout:AddInitializer(CreateSettingsButtonInitializer(
-		L["New Profile"] or "New Profile",
-		L["New Profile"] or "New Profile",
-		function() StaticPopup_Show("BBM_NEW_PROFILE") end,
-		L["Create a new profile as a copy of the current one"] or "Create a new profile as a copy of the current one",
+		L["New Profile"],
+		L["New Profile"],
+		function()
+			StaticPopup_ShowCustomGenericInputBox({
+				text = L["Enter a name for the new profile:"],
+				acceptText = L["Create"],
+				maxLetters = 32,
+				callback = function(name)
+					if name and name ~= "" then addon:CreateProfile(name) end
+				end,
+			})
+		end,
+		L["Create a new profile as a copy of the current one"],
 		false
 	))
 
 	-- Delete profile button — clicking on Default silently does nothing
 	layout:AddInitializer(CreateSettingsButtonInitializer(
-		L["Delete Profile"] or "Delete Profile",
-		L["Delete Profile"] or "Delete Profile",
+		L["Delete Profile"],
+		L["Delete Profile"],
 		function()
-			local current = addon.sv.activeProfile
+			local charProfile = addon.charKey and addon.sv.characterProfiles[addon.charKey]
+			local current = charProfile or addon.sv.activeProfile or "Default"
 			if current == "Default" then return end
-			StaticPopup_Show("BBM_DELETE_PROFILE", current, nil, current)
+			StaticPopup_ShowCustomGenericConfirmation({
+				text = string.format(L["Delete profile \"%s\"?"], current),
+				acceptText = DELETE,
+				cancelText = CANCEL,
+				callback = function()
+					addon:DeleteProfile(current)
+				end,
+			})
 		end,
-		L["Delete the current profile (not available for Default)"] or "Delete the current profile (not available for Default)",
+		L["Delete the current profile (not available for Default)"],
 		false
 	))
 
