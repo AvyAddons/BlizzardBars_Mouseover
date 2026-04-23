@@ -104,8 +104,6 @@ end)({
 		["Toggle mouseover for the buff frame"] = true,
 		["Toggle mouseover for the debuff frame"] = true,
 		["Profiles"] = true,
-		["Active Profile"] = true,
-		["Switch the active settings profile"] = true,
 		["New Profile"] = true,
 		["Create a new profile as a copy of the current one"] = true,
 		["Delete Profile"] = true,

@@ -490,7 +490,7 @@ end
 
 --- Resolves which profile should be active for the current character and sets addon.db.
 --- Character override (sv.characterProfiles) takes priority over the global default (sv.activeProfile).
---- Does not write any sv fields; stale character assignments are cleared silently.
+--- Stale assignments pointing at deleted profiles are healed back to "Default".
 function addon:ResolveCharacterProfile()
 	local sv = self.sv
 	local resolvedName
@@ -507,7 +507,10 @@ function addon:ResolveCharacterProfile()
 	end
 	if not resolvedName then
 		resolvedName = sv.activeProfile or "Default"
-		if type(sv.profiles[resolvedName]) ~= "table" then resolvedName = "Default" end
+		if type(sv.profiles[resolvedName]) ~= "table" then
+			resolvedName = "Default"
+			sv.activeProfile = "Default"
+		end
 	end
 	local profile = sv.profiles[resolvedName]
 	for key, val in pairs(self.defaults) do
@@ -642,27 +645,11 @@ function addon:CreateConfigPanel()
 			if addon.charKey then
 				addon.sv.characterProfiles[addon.charKey] = nil
 			end
-			local globalName = addon.sv.activeProfile or "Default"
-			if type(addon.sv.profiles[globalName]) ~= "table" then globalName = "Default" end
-			local profile = addon.sv.profiles[globalName]
-			for key, val in pairs(addon.defaults) do
-				if profile[key] == nil then profile[key] = val end
-			end
-			addon.db = profile
+			addon:ResolveCharacterProfile()
+			addon:ApplyProfile()
+			if addon.configInitialized then addon:RefreshSettingsUI() end
 		else
-			if not addon.sv.profiles[value] then return end
-			if addon.charKey then
-				addon.sv.characterProfiles[addon.charKey] = value
-			end
-			local profile = addon.sv.profiles[value]
-			for key, val in pairs(addon.defaults) do
-				if profile[key] == nil then profile[key] = val end
-			end
-			addon.db = profile
-		end
-		addon:ApplyProfile()
-		if addon.configInitialized then
-			addon:RefreshSettingsUI()
+			addon:SetCharacterProfile(value)
 		end
 	end
 	local charProfileSetting = Settings.RegisterProxySetting(
