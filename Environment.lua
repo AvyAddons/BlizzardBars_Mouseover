@@ -143,18 +143,8 @@ addon.eventFrame:SetScript("OnEvent", function(self, event, ...)
 			-- If that is the case, directly run the enabling method.
 			if (IsLoggedIn()) then
 				-- Character is available: resolve character-specific profile assignment
-				local charKey = UnitName("player") .. "-" .. GetRealmName()
-				addon.charKey = charKey
-				local charProfile = sv.characterProfiles[charKey]
-				if charProfile then
-					if type(sv.profiles[charProfile]) == "table" then
-						sv.activeProfile = charProfile
-						addon.db = sv.profiles[charProfile]
-					else
-						-- Profile was deleted, clear the stale assignment
-						sv.characterProfiles[charKey] = nil
-					end
-				end
+				addon.charKey = UnitName("player") .. "-" .. GetRealmName()
+				addon:ResolveCharacterProfile()
 				if (addon.OnEnable) then
 					addon:OnEnable()
 				end
@@ -174,19 +164,8 @@ addon.eventFrame:SetScript("OnEvent", function(self, event, ...)
 		-- should be put in the namespace enable method.
 		addon.eventFrame:UnregisterEvent("PLAYER_LOGIN")
 		-- Resolve character-specific profile assignment
-		local charKey = UnitName("player") .. "-" .. GetRealmName()
-		addon.charKey = charKey
-		local sv = addon.sv
-		local charProfile = sv.characterProfiles[charKey]
-		if charProfile then
-			if type(sv.profiles[charProfile]) == "table" then
-				sv.activeProfile = charProfile
-				addon.db = sv.profiles[charProfile]
-			else
-				-- Profile was deleted, clear the stale assignment
-				sv.characterProfiles[charKey] = nil
-			end
-		end
+		addon.charKey = UnitName("player") .. "-" .. GetRealmName()
+		addon:ResolveCharacterProfile()
 		-- Call the enabling method.
 		if (addon.OnEnable) then
 			addon:OnEnable()
