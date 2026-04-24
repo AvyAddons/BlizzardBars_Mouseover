@@ -3,9 +3,11 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [4.3.0] 2026-04-24
 ### Added
-- You can now assign a profile to the current character separately from setting the global default. The settings panel shows two controls: one for this character and one for the fallback used by characters with no specific assignment. Switching a character's profile no longer silently changes the global default.
+- Profile Management!
+  - You can now assign a profile to the current character separately from setting the global default.
+  - The settings panel shows two controls: one for this character and one for the fallback used by characters with no specific assignment.
 
 ## [4.2.1] 2026-03-30
 ### Fixed
