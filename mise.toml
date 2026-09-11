@@ -1,0 +1,6 @@
+[tools]
+"lua-language-server" = "latest"
+
+[tasks.lint]
+description = "Type-check and lint Lua against the WoW API annotations"
+run = "lua-language-server --check . --checklevel=Warning --check_format=pretty"

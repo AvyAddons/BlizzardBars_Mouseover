@@ -13,4 +13,5 @@ ignore:
     - LICENSE.md
     - README.md
     - .editorconfig
+    - mise.toml
     - .github
