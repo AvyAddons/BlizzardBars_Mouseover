@@ -116,12 +116,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Update Configuration panel to new Vertical Layout
 
 ## [2.3.0] 2024-08-05
-### Improvements
+### Changed
 - Improved Skyriding detection. Should now be faster and cause less lag (thanks WA team!)
+- Major code refactoring, now with better logical split
+
 ### Fixed
 - Fixed taint when clicking bars with mouseover enabled
-### Changed
-- Major code refactoring, now with better logical split
 
 ## [2.2.1] 2024-07-27
 ### Fixed
