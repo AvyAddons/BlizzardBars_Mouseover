@@ -14,7 +14,6 @@ local string_split = string.split
 -- WoW API
 -----------------------------------------------------------
 -- Up-value any WoW functions used here.
-local _G = _G
 local GetRealmName = _G.GetRealmName
 local UnitName = _G.UnitName
 ---@type table<string, function>

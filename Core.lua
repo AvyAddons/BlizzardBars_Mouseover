@@ -12,7 +12,6 @@ local string_find = string.find
 -- WoW API
 -----------------------------------------------------------
 -- Up-value any WoW functions used here.
-local _G = _G
 local C_TimerAfter = _G.C_Timer.After
 local C_PlayerInfo_GetGlidingInfo = _G.C_PlayerInfo.GetGlidingInfo
 ---@type Frame
@@ -26,11 +25,19 @@ local MAIN_BAR = addon.MAIN_BAR
 -----------------------------------------------------------
 -- Add utility functions like time formatting and similar here.
 
+---@class Timer
+---@field name string
+---@field delay number
+---@field fn function
+---@field cancelled boolean
+---@field callback function
+---@field post_call function?
+
 --- Fires a callback after `delay` seconds has passed.
 ---@param fn function Void callback
 ---@param delay number Delay in seconds
 ---@param every number|nil repeat Every in seconds
----@return table timer The timer table
+---@return Timer timer
 function addon:Timer(fn, delay, every)
 	-- C_TimerAfter doesn't allow anything below
 	if delay < 0.01 then delay = 0.01 end
@@ -45,8 +52,8 @@ function addon:Timer(fn, delay, every)
 	timer.callback = function()
 		if not timer.cancelled then
 			timer.fn()
-			if (every == nil and timer.post_call and type(timer.post_call) == "function") then timer.post_call() end
-			if (every ~= nil) then C_TimerAfter(every, timer.callback) end
+			if every == nil and timer.post_call and type(timer.post_call) == "function" then timer.post_call() end
+			if every ~= nil then C_TimerAfter(every, timer.callback) end
 		end
 	end
 
@@ -59,8 +66,10 @@ end
 ---@param post_call_flag boolean|nil If true, will execute the post-call method
 function addon:CancelTimer(bar_name, post_call_flag)
 	local timer = self.timers[bar_name]
-	if timer then timer.cancelled = true end
-	if (post_call_flag == true and timer.post_call) then timer.post_call() end
+	if timer then
+		timer.cancelled = true
+		if post_call_flag == true and timer.post_call then timer.post_call() end
+	end
 end
 
 function addon:CancelAllTimers()
@@ -70,15 +79,17 @@ function addon:CancelAllTimers()
 end
 
 function addon:GetFlyoutParent()
-	if (SpellFlyout:IsShown()) then
+	if SpellFlyout:IsShown() then
 		local parent = SpellFlyout:GetParent()
 		local parent_name = parent ~= nil and parent:GetName() or ""
-		if (string_find(parent_name, "([Bb]utton)%d")) then
+		if string_find(parent_name, "([Bb]utton)%d") then
 			local index = (function(array, value)
-				for i, v in ipairs(array) do if v == value then return i end end
+				for i, v in ipairs(array) do
+					if v == value then return i end
+				end
 				return nil
 			end)(self.button_names, string_gsub(parent_name, "%d", ""))
-			if (index) then return self.bar_names[index] end
+			if index then return self.bar_names[index] end
 		end
 	end
 	return nil
@@ -103,12 +114,12 @@ end
 ---@param bar Frame
 ---@param bar_name string
 function addon:ApplyOnBar(bar, bar_name)
-	if (bar == nil) then return end
-	if (bar_name == nil or (not self:CheckBypass(bar_name))) then
+	if bar == nil then return end
+	if bar_name == nil or (not self:CheckBypass(bar_name)) then
 		bar:SetAlpha(1)
 		return
 	end
-	if (self.db[bar_name]) then
+	if self.db[bar_name] then
 		bar:SetAlpha(addon.db.AlphaMin)
 	else
 		bar:SetAlpha(1)
@@ -130,7 +141,7 @@ function addon:SecureHook(frame, bar, bar_name)
 	frame:HookScript("OnLeave", function()
 		if not addon.enabled then return end
 		local timer = addon.timers[bar_name]
-		if (timer and not timer.cancelled and timer.name == "FadeIn") then
+		if timer and not timer.cancelled and timer.name == "FadeIn" then
 			timer.post_call = function() addon:FadeBar("FadeOut", bar, bar_name) end
 		else
 			addon:FadeBar("FadeOut", bar, bar_name)
@@ -249,14 +260,10 @@ function addon:SetBlingRender(bar_name, flag)
 end
 
 --- Resumes callbacks
-function addon:ResumeCallbacks()
-	self.enabled = true
-end
+function addon:ResumeCallbacks() self.enabled = true end
 
 --- Pauses callbacks without actually unhooking them
-function addon:PauseCallbacks()
-	self.enabled = false
-end
+function addon:PauseCallbacks() self.enabled = false end
 
 --- Show all bars
 --- @param frames boolean|nil If true, also show frame containers, micro menu, and aura frames
@@ -315,16 +322,12 @@ end
 ---@param event FrameEvent|nil Event name
 ---@param canGlide boolean|nil Only defined when event is 'PLAYER_CAN_GLIDE_CHANGED'
 function addon:Skyriding(event, canGlide)
-	if (not addon.enabled or not addon.db.Skyriding) then
-		return
-	end
+	if not addon.enabled or not addon.db.Skyriding then return end
 
-	if event ~= "PLAYER_CAN_GLIDE_CHANGED" then
-		canGlide = select(2, C_PlayerInfo_GetGlidingInfo())
-	end
+	if event ~= "PLAYER_CAN_GLIDE_CHANGED" then canGlide = select(2, C_PlayerInfo_GetGlidingInfo()) end
 
 	addon.skyriding = canGlide
-	if (addon.skyriding) then
+	if addon.skyriding then
 		-- show main bar
 		addon.bars[MAIN_BAR]:SetAlpha(1)
 	else
@@ -336,14 +339,14 @@ end
 ---@param event FrameEvent The name of the event that fired.
 function addon:Vehicle(event, ...)
 	-- ignore when bypass disabled
-	if (not self.enabled or not addon.db.Vehicle) then return end
+	if not self.enabled or not addon.db.Vehicle then return end
 
 	local vehicle = UnitInVehicle("player") or UnitOnTaxi("player") or false
 
 	local button = _G["MainMenuBarVehicleLeaveButton"]
-	local canExit = button:CanExitVehicle();
+	local canExit = button:CanExitVehicle()
 
-	if (vehicle) then
+	if vehicle then
 		-- show vehicle exit button
 		if canExit then
 			-- have to change parent, otherwise MainMenuBar will hide it
@@ -364,20 +367,20 @@ end
 
 function addon:HandleFlyoutShow()
 	-- ignore when bypass enabled
-	if (not self.enabled) then return end
+	if not self.enabled then return end
 	-- this returns nil if the parent isn't one of the bars we're hiding
 	self.bypass = self:GetFlyoutParent()
 	-- this happens when opening a flyout from the spellbook
-	if (self.bypass == nil) then return end
+	if self.bypass == nil then return end
 	self:CancelTimer(self.bypass)
 	self.bars[self.bypass]:SetAlpha(1)
 end
 
 function addon:HandleFlyoutHide()
 	-- ignore when bypass enabled
-	if (not self.enabled) then return end
+	if not self.enabled then return end
 	local prev_bypass = self.bypass
-	if (prev_bypass) then
+	if prev_bypass then
 		self.bypass = nil
 		addon:FadeBar("FadeOut", self.bars[prev_bypass], prev_bypass)
 	end
@@ -390,12 +393,12 @@ end
 ---@param container Frame
 ---@param container_name string
 function addon:ApplyOnFrameContainer(container, container_name)
-	if (container == nil) then return end
-	if (container_name == nil or not self.db[container_name]) then
+	if container == nil then return end
+	if container_name == nil or not self.db[container_name] then
 		container:SetAlpha(1)
 		return
 	end
-	if (self.db[container_name]) then
+	if self.db[container_name] then
 		container:SetAlpha(addon.db.AlphaMin)
 	else
 		container:SetAlpha(1)
@@ -475,7 +478,7 @@ function addon:SecureHookFrameContainer(frame, container, container_name)
 	frame:HookScript("OnLeave", function()
 		if not addon.enabled then return end
 		local timer = addon.timers[container_name]
-		if (timer and not timer.cancelled and timer.name == "FadeIn") then
+		if timer and not timer.cancelled and timer.name == "FadeIn" then
 			timer.post_call = function() addon:FadeFrameContainer("FadeOut", container_name) end
 		else
 			addon:FadeFrameContainer("FadeOut", container_name)
@@ -517,7 +520,7 @@ end
 
 --- Apply alpha to all micro menu buttons
 function addon:ApplyOnMicroMenu()
-	if (not self.db.MicroButtons) then
+	if not self.db.MicroButtons then
 		for _, button in ipairs(self.frame_button_refs.MicroButtons) do
 			button:SetAlpha(1)
 		end
@@ -598,7 +601,7 @@ function addon:SecureHookMicroMenu(frame)
 	frame:HookScript("OnLeave", function()
 		if not addon.enabled then return end
 		local timer = addon.timers["MicroButtons"]
-		if (timer and not timer.cancelled and timer.name == "FadeIn") then
+		if timer and not timer.cancelled and timer.name == "FadeIn" then
 			timer.post_call = function() addon:FadeMicroMenu("FadeOut") end
 		else
 			addon:FadeMicroMenu("FadeOut")
@@ -636,9 +639,7 @@ function addon:ShowMicroMenu()
 end
 
 --- Hide all micro menu buttons
-function addon:HideMicroMenu()
-	self:ApplyOnMicroMenu()
-end
+function addon:HideMicroMenu() self:ApplyOnMicroMenu() end
 
 --- Handle game menu showing - restore micro button alpha to 1 while menu is open
 function addon:HandleGameMenuShow()
@@ -653,9 +654,7 @@ end
 --- Handle game menu hiding - restore our micro button alpha
 function addon:HandleGameMenuHide()
 	-- Restore our micro button alpha after the menu closes and Blizzard resets to alpha 1
-	if addon.enabled and addon.db.MicroButtons then
-		addon:ApplyOnMicroMenu()
-	end
+	if addon.enabled and addon.db.MicroButtons then addon:ApplyOnMicroMenu() end
 end
 
 -- Aura Frame Functions (for BuffFrame/DebuffFrame)
@@ -665,8 +664,8 @@ end
 ---@param frame_name string Name of the aura frame ("BuffFrame" or "DebuffFrame")
 function addon:ApplyOnAuraFrame(frame_name)
 	local frame = self.aura_frames[frame_name]
-	if (frame == nil) then return end
-	if (self.db[frame_name]) then
+	if frame == nil then return end
+	if self.db[frame_name] then
 		frame:SetAlpha(addon.db.AlphaMin)
 	else
 		frame:SetAlpha(1)
@@ -688,7 +687,8 @@ function addon:FadeInAuraFrameTimer(frame_name)
 			alpha = addon.db["AlphaMax"]
 		end
 		addon.fades[frame_name] = alpha
-		self.aura_frames[frame_name]:SetAlpha(alpha)
+		local frame = self.aura_frames[frame_name]
+		if frame ~= nil then frame:SetAlpha(alpha) end
 	end, (addon.db["FadeInDelay"] or 0), addon.db["MaxRefreshRate"])
 	return timer
 end
@@ -708,7 +708,8 @@ function addon:FadeOutAuraFrameTimer(frame_name)
 			alpha = addon.db["AlphaMin"]
 		end
 		addon.fades[frame_name] = alpha
-		self.aura_frames[frame_name]:SetAlpha(alpha)
+		local frame = self.aura_frames[frame_name]
+		if frame ~= nil then frame:SetAlpha(alpha) end
 	end, (addon.db["FadeOutDelay"] or 0), addon.db["MaxRefreshRate"])
 	return timer
 end
@@ -744,7 +745,7 @@ function addon:SecureHookAuraButton(button, frame_name)
 	button:HookScript("OnLeave", function()
 		if not addon.enabled then return end
 		local timer = addon.timers[frame_name]
-		if (timer and not timer.cancelled and timer.name == "FadeIn") then
+		if timer and not timer.cancelled and timer.name == "FadeIn" then
 			timer.post_call = function() addon:FadeAuraFrame("FadeOut", frame_name) end
 		else
 			addon:FadeAuraFrame("FadeOut", frame_name)
@@ -769,9 +770,7 @@ function addon:HookAuraFrame(frame_name)
 		self:SecureHookAuraButton(frame.CollapseAndExpandButton, frame_name)
 	end
 	-- Also hook ConsolidatedBuffs on BuffFrame
-	if frame and frame.ConsolidatedBuffs then
-		self:SecureHookAuraButton(frame.ConsolidatedBuffs, frame_name)
-	end
+	if frame and frame.ConsolidatedBuffs then self:SecureHookAuraButton(frame.ConsolidatedBuffs, frame_name) end
 end
 
 --- Show all aura frames
@@ -801,9 +800,7 @@ function addon:RefreshAlpha()
 		self:ApplyOnFrameContainer(container, container_name)
 	end
 
-	if self.db.MicroButtons then
-		self:ApplyOnMicroMenu()
-	end
+	if self.db.MicroButtons then self:ApplyOnMicroMenu() end
 
 	for frame_name, _ in pairs(self.aura_frames) do
 		self:ApplyOnAuraFrame(frame_name)

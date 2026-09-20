@@ -12,7 +12,6 @@ local pairs = pairs
 -- WoW API
 -----------------------------------------------------------
 -- Upvalue any WoW functions used here.
-local _G = _G
 local GetLocale = _G.GetLocale
 
 -- Localization system.

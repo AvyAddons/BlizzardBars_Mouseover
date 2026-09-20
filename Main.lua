@@ -14,7 +14,6 @@ local ipairs = ipairs
 -- WoW API
 -----------------------------------------------------------
 -- Up-value any WoW functions used here.
-local _G = _G
 local C_TimerAfter = _G.C_Timer.After
 ---@type Frame
 local QuickKeybindFrame = _G["QuickKeybindFrame"]
@@ -41,6 +40,7 @@ addon.PET_ACTION_BUTTON = PET_ACTION_BUTTON
 -----------------------------------------------------------
 
 --- Map for created timers. Keys should be the bar names.
+---@type table<string, Timer>
 addon.timers = {}
 --- Map for current bar alpha values. Keys are bar names.
 addon.fades = {}
@@ -132,20 +132,20 @@ addon.bypass = nil
 --- @param event FrameEvent The name of the event that fired.
 --- @param ... unknown Any payloads passed by the event handlers.
 function addon:OnEvent(event, ...)
-	if (event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_CAN_GLIDE_CHANGED") then
-		self:Skyriding(event, ...)
-	end
-	if (event == "PLAYER_ENTERING_WORLD"
-			or event == "UNIT_ENTERED_VEHICLE"
-			or event == "UNIT_EXITED_VEHICLE"
-			or event == "VEHICLE_UPDATE"
-			or event == "UPDATE_BONUS_ACTIONBAR") then
+	if event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_CAN_GLIDE_CHANGED" then self:Skyriding(event, ...) end
+	if
+		event == "PLAYER_ENTERING_WORLD"
+		or event == "UNIT_ENTERED_VEHICLE"
+		or event == "UNIT_EXITED_VEHICLE"
+		or event == "VEHICLE_UPDATE"
+		or event == "UPDATE_BONUS_ACTIONBAR"
+	then
 		self:Vehicle(event, ...)
 	end
 
-	if (event == "ACTIONBAR_SHOWGRID") then
+	if event == "ACTIONBAR_SHOWGRID" then
 		self:ShowBars()
-	elseif (event == "ACTIONBAR_HIDEGRID") then
+	elseif event == "ACTIONBAR_HIDEGRID" then
 		self:HideBars()
 	end
 end
@@ -155,7 +155,7 @@ end
 ---@param command string The name of the slash command type in.
 ---@param ... string Any additional arguments passed to your command, all as strings.
 function addon:OnChatCommand(editBox, command, ...)
-	function PrintCommands()
+	local function PrintCommands()
 		addon:Print([[Available commands:
         - |cff24acf2/bbm|r: Opens the configuration panel
         - |cff24acf2/bbm config|r: Opens the configuration panel
@@ -164,14 +164,14 @@ function addon:OnChatCommand(editBox, command, ...)
         ]])
 	end
 
-	local arg1, arg2 = ...
-	if (not arg1 or arg1 == "") then
+	local arg1 = ...
+	if not arg1 or arg1 == "" then
 		Settings_OpenToCategory(addon.category)
-	elseif (arg1 == "config") then
+	elseif arg1 == "config" then
 		Settings_OpenToCategory(addon.category)
-	elseif (arg1 == "toggle") then
+	elseif arg1 == "toggle" then
 		self:ToggleBars()
-	elseif (arg1 == "help") then
+	elseif arg1 == "help" then
 		PrintCommands()
 	else
 		self:Print("Command not recognized.")
@@ -190,7 +190,7 @@ function addon:OnInit()
 	-- populate button references
 	for i, button_name in ipairs(self.button_names) do
 		self.buttons[self.bar_names[i]] = {}
-		if (i <= 8) then
+		if i <= 8 then
 			-- multi action bars 1 through 8 have 12 buttons
 			for j = 1, 12 do
 				self.buttons[self.bar_names[i]][j] = _G[button_name .. j]
@@ -219,9 +219,7 @@ function addon:OnInit()
 		self.frame_button_refs[containerName] = {}
 		for _, buttonName in ipairs(buttonList) do
 			local button = _G[buttonName]
-			if button then
-				table.insert(self.frame_button_refs[containerName], button)
-			end
+			if button then table.insert(self.frame_button_refs[containerName], button) end
 		end
 	end
 
@@ -237,7 +235,7 @@ function addon:OnInit()
 	end
 
 	-- Chat commands
-	self:RegisterChatCommand('bbm')
+	self:RegisterChatCommand("bbm")
 end
 
 -- Enabling.
@@ -265,7 +263,9 @@ function addon:OnEnable()
 
 	-- Same thing for Edit Mode
 	-- These cause a small hicup if we call it instantly. So a tiny delay fixes that
-	EditModeManagerFrame:HookScript("OnShow", function() C_TimerAfter(0.05, function() addon:ShowBars(true) end) end)
+	EditModeManagerFrame:HookScript("OnShow", function()
+		C_TimerAfter(0.05, function() addon:ShowBars(true) end)
+	end)
 	EditModeManagerFrame:HookScript("OnHide", function()
 		-- Use longer delays than OnShow (0.05s) to guarantee execution order
 		C_TimerAfter(0.10, function() addon:HideBars(true) end)

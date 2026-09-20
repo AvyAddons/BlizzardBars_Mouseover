@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Fixed
+- Fixed a rare error that could pop up when a bar was told to stop fading before it had started
+
 ## [4.4.1] 2026-08-14
 ### Changed
 - Bump TOC to 12.1.0
