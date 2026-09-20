@@ -98,7 +98,7 @@ When hooking Blizzard UI, be aware that Blizzard's `UpdateMicroButton()` methods
 
 ### Linting
 
-The project uses lua-language-server via VS Code with the ketho.wow-api extension. Configuration is in `.luarc.json`. WoW API globals are defined in `diagnostics.globals`.
+The project uses [wowlua-ls](https://github.com/TradeSkillMaster/wowlua-ls), configured in `.wowluarc.json`. Run `mise run lint` to check the addon.
 
 ### Packaging and Release
 

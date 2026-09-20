@@ -1,0 +1,7 @@
+{
+  "ignore": ["Libs/"],
+  "flavors": ["retail"],
+  "diagnostics": {
+    "enable": ["need-check-nil"]
+  }
+}
