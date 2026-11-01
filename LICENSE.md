@@ -1,6 +1,6 @@
 ## Custom License
 
-Copyright (c) 2024 Lucas Vienna (Avyiel) <dev@lucasvienna.dev>
+Copyright (c) 2024 Lucas Vienna (Avyiel) <addons@avyiel.dev>
 Copyright (c) 2021 Lars Norberg
 
 This document and the software here mentioned refers to any and all code of this project, but none of the artwork and media assets.
