@@ -104,10 +104,11 @@ end
 function addon:CheckBypass(bar_name)
 	-- if we're skyriding and this is the main bar, bypass the function
 	local skyridingBypass = (self.skyriding and bar_name == MAIN_BAR)
+	local combatBypass = (self.combat and self.db.Combat)
 	-- ad-hoc bypass of any given bar
 	local adHocBypass = (self.bypass == bar_name or addon.db[bar_name] == false)
 
-	return not (skyridingBypass or adHocBypass)
+	return not (skyridingBypass or combatBypass or adHocBypass)
 end
 
 ---Apply alpha to a given bar
@@ -304,6 +305,8 @@ function addon:ToggleBars()
 		self:ShowBars(true)
 		self:UnregisterAllEvents()
 	else
+		-- combat events are unregistered while toggled, so resync before re-applying alpha
+		self.combat = UnitAffectingCombat("player")
 		self:HideBars(true)
 		self:RegisterEvent("ACTIONBAR_SHOWGRID")
 		self:RegisterEvent("ACTIONBAR_HIDEGRID")
@@ -315,6 +318,8 @@ function addon:ToggleBars()
 		self:RegisterEvent("UNIT_EXITED_VEHICLE")
 		self:RegisterEvent("VEHICLE_UPDATE")
 		self:RegisterEvent("TAXIMAP_CLOSED")
+		self:RegisterEvent("PLAYER_REGEN_DISABLED")
+		self:RegisterEvent("PLAYER_REGEN_ENABLED")
 	end
 end
 
@@ -332,6 +337,17 @@ function addon:Skyriding(event, canGlide)
 		addon.bars[MAIN_BAR]:SetAlpha(1)
 	else
 		addon:ApplyOnBar(addon.bars[MAIN_BAR], MAIN_BAR)
+	end
+end
+
+--- Show all action bars while in combat
+---@param inCombat boolean
+function addon:Combat(inCombat)
+	self.combat = inCombat
+	if not self.enabled or not self.db.Combat then return end
+	for bar_name, bar in pairs(self.bars) do
+		self:CancelTimer(bar_name)
+		self:ApplyOnBar(bar, bar_name)
 	end
 end
 

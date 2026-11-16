@@ -120,6 +120,8 @@ addon.aura_buttons = {}
 addon.enabled = true
 --- Skyriding hover bypass
 addon.skyriding = false
+--- Combat hover bypass
+addon.combat = false
 --- Generic bypass, currently in use for flyouts
 ---@type string|nil
 addon.bypass = nil
@@ -141,6 +143,10 @@ function addon:OnEvent(event, ...)
 		or event == "UPDATE_BONUS_ACTIONBAR"
 	then
 		self:Vehicle(event, ...)
+	end
+
+	if event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED" then
+		self:Combat(event == "PLAYER_REGEN_DISABLED")
 	end
 
 	if event == "ACTIONBAR_SHOWGRID" then
@@ -251,6 +257,9 @@ function addon:OnEnable()
 	self:RegisterEvent("UNIT_EXITED_VEHICLE")
 	self:RegisterEvent("VEHICLE_UPDATE")
 	self:RegisterEvent("UPDATE_BONUS_ACTIONBAR")
+
+	self:RegisterEvent("PLAYER_REGEN_DISABLED")
+	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 
 	-- These get called when we're dragging a spell
 	self:RegisterEvent("ACTIONBAR_SHOWGRID")

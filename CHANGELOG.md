@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- New "Show in Combat" option that keeps all action bars visible while you are in combat
+
 ## [4.5.0] 2026-11-11
 ### Added
 - Added support for Forever
