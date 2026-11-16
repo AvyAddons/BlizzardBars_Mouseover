@@ -97,6 +97,7 @@ end)({
 		["Duration of the fade-out animation"] = true,
 		["Fade-in transparency"] = true,
 		["Fade-out transparency"] = true,
+		["EllesmereUI Action Bars is controlling your action bars, so BlizzardBars_Mouseover is disabled. Disable the EllesmereUI Action Bars addon to use mouseover bars."] = true,
 		["Transparency of the action bar when fully faded in"] = true,
 		["Transparency of the action bar when fully faded out"] = true,
 		["Auras"] = true,
@@ -176,6 +177,8 @@ end)({
 		["Duration of the fade-out animation"] = "Продолжительность анимации исчезновения",
 		["Fade-in transparency"] = "Прозрачность при появлении",
 		["Fade-out transparency"] = "Прозрачность при исчезновении",
+		["EllesmereUI Action Bars is controlling your action bars, so BlizzardBars_Mouseover is disabled. Disable the EllesmereUI Action Bars addon to use mouseover bars."] =
+		"EllesmereUI Action Bars управляет панелями команд, поэтому BlizzardBars_Mouseover отключён. Отключите аддон EllesmereUI Action Bars, чтобы использовать появление панелей при наведении мыши.",
 		["Transparency of the action bar when fully faded in"] =
 		"Прозрачность панели команд в полностью видимом состоянии",
 		["Transparency of the action bar when fully faded out"] =

@@ -125,6 +125,8 @@ addon.combat = false
 --- Generic bypass, currently in use for flyouts
 ---@type string|nil
 addon.bypass = nil
+--- Set when another addon controls the action bars; nothing gets hooked
+addon.blocked = false
 
 -- Addon Core
 -----------------------------------------------------------
@@ -176,13 +178,21 @@ function addon:OnChatCommand(editBox, command, ...)
 	elseif arg1 == "config" then
 		Settings_OpenToCategory(addon.category)
 	elseif arg1 == "toggle" then
-		self:ToggleBars()
+		if self.blocked then
+			self:PrintBlocked()
+		else
+			self:ToggleBars()
+		end
 	elseif arg1 == "help" then
 		PrintCommands()
 	else
 		self:Print("Command not recognized.")
 		PrintCommands()
 	end
+end
+
+function addon:PrintBlocked()
+	self:Print(self.L["EllesmereUI Action Bars is controlling your action bars, so BlizzardBars_Mouseover is disabled. Disable the EllesmereUI Action Bars addon to use mouseover bars."])
 end
 
 -- Initialization.
@@ -248,6 +258,13 @@ end
 -- This fires when most of the user interface has been loaded
 -- and most data is available to the user.
 function addon:OnEnable()
+	-- EllesmereUI's action bar module replaces the Blizzard bars this addon fades
+	self.blocked = C_AddOns.IsAddOnLoaded("EllesmereUIActionBars")
+	if self.blocked then
+		self:PrintBlocked()
+		return
+	end
+
 	-- Skyriding events
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 	self:RegisterEvent("PLAYER_CAN_GLIDE_CHANGED")

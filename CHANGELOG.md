@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 ### Added
 - New "Show in Combat" option that keeps all action bars visible while you are in combat
+- The addon now turns itself off with a chat message when EllesmereUI Action Bars is loaded, since both would control the same bars
 
 ## [4.5.0] 2026-11-11
 ### Added
