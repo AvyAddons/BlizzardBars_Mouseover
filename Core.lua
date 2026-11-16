@@ -534,18 +534,19 @@ end
 -- Micro Menu Functions
 -----------------------------------------------------------
 
---- Apply alpha to all micro menu buttons
-function addon:ApplyOnMicroMenu()
-	if not self.db.MicroButtons then
-		for _, button in ipairs(self.frame_button_refs.MicroButtons) do
-			button:SetAlpha(1)
-		end
-		return
-	end
+--- Set alpha on all micro menu buttons and background art
+---@param alpha number
+function addon:SetMicroMenuAlpha(alpha)
 	for _, button in ipairs(self.frame_button_refs.MicroButtons) do
-		button:SetAlpha(addon.db.AlphaMin)
+		button:SetAlpha(alpha)
+	end
+	for _, texture in ipairs(self.micro_menu_art) do
+		texture:SetAlpha(alpha)
 	end
 end
+
+--- Apply alpha to all micro menu buttons
+function addon:ApplyOnMicroMenu() self:SetMicroMenuAlpha(self.db.MicroButtons and self.db.AlphaMin or 1) end
 
 --- Fades micro menu with a given transition
 ---@param transition "FadeIn"|"FadeOut"
@@ -574,10 +575,7 @@ function addon:FadeInMicroMenuTimer()
 			alpha = addon.db["AlphaMax"]
 		end
 		addon.fades["MicroButtons"] = alpha
-		-- Apply alpha to all micro buttons individually
-		for _, button in ipairs(self.frame_button_refs.MicroButtons) do
-			button:SetAlpha(alpha)
-		end
+		self:SetMicroMenuAlpha(alpha)
 	end, (addon.db["FadeInDelay"] or 0), addon.db["MaxRefreshRate"])
 	return timer
 end
@@ -596,10 +594,7 @@ function addon:FadeOutMicroMenuTimer()
 			alpha = addon.db["AlphaMin"]
 		end
 		addon.fades["MicroButtons"] = alpha
-		-- Apply alpha to all micro buttons individually
-		for _, button in ipairs(self.frame_button_refs.MicroButtons) do
-			button:SetAlpha(alpha)
-		end
+		self:SetMicroMenuAlpha(alpha)
 	end, (addon.db["FadeOutDelay"] or 0), addon.db["MaxRefreshRate"])
 	return timer
 end
@@ -608,14 +603,15 @@ end
 ---@param frame Frame Button frame on which to hook
 function addon:SecureHookMicroMenu(frame)
 	frame:HookScript("OnEnter", function()
-		if not addon.enabled then return end
+		-- Blizzard greys out the micro menu while the game menu is open; fading would override that
+		if not addon.enabled or GameMenuFrame:IsShown() then return end
 		-- Always immediately start the fade-in, regardless of a running fade-out
 		addon:CancelTimer("MicroButtons")
 		addon:FadeMicroMenu("FadeIn")
 	end)
 
 	frame:HookScript("OnLeave", function()
-		if not addon.enabled then return end
+		if not addon.enabled or GameMenuFrame:IsShown() then return end
 		local timer = addon.timers["MicroButtons"]
 		if timer and not timer.cancelled and timer.name == "FadeIn" then
 			timer.post_call = function() addon:FadeMicroMenu("FadeOut") end
@@ -623,6 +619,16 @@ function addon:SecureHookMicroMenu(frame)
 			addon:FadeMicroMenu("FadeOut")
 		end
 	end)
+end
+
+---@param button Button
+local function ReapplyMicroButtonAlpha(button)
+	-- the game menu greys out the micro menu on purpose, keep that
+	if addon.enabled and addon.db.MicroButtons and not GameMenuFrame:IsShown() then
+		---@type number
+		local alpha = addon.fades["MicroButtons"] or addon.db["AlphaMin"]
+		button:SetAlpha(alpha)
+	end
 end
 
 --- Hook micro menu
@@ -633,25 +639,18 @@ function addon:HookMicroMenu()
 	-- Hook all micro buttons to trigger shared fade and handle OnEnable alpha resets
 	for _, button in ipairs(self.frame_button_refs.MicroButtons) do
 		self:SecureHookMicroMenu(button)
-		-- Hook OnEnable to re-apply alpha when Blizzard enables the button
-		-- MainMenuBarMicroButtonMixin:OnEnable() sets alpha to 1, which can be triggered
-		-- from various events (PLAYER_ENTERING_WORLD, INITIAL_CLUBS_LOADED, etc.)
-		-- without going through UpdateMicroButton()
-		button:HookScript("OnEnable", function(btn)
-			if addon.enabled and addon.db.MicroButtons then
-				local alpha = addon.fades["MicroButtons"] or addon.db["AlphaMin"]
-				btn:SetAlpha(alpha)
-			end
-		end)
+		-- MainMenuBarMicroButtonMixin sets alpha to 1 in OnEnable and 0.5 in OnDisable, which
+		-- can be triggered from various events (PLAYER_ENTERING_WORLD, INITIAL_CLUBS_LOADED,
+		-- level-locked features, etc.) without going through UpdateMicroButton()
+		button:HookScript("OnEnable", ReapplyMicroButtonAlpha)
+		button:HookScript("OnDisable", ReapplyMicroButtonAlpha)
 	end
 end
 
 --- Show all micro menu buttons
 function addon:ShowMicroMenu()
 	self:CancelTimer("MicroButtons")
-	for _, button in ipairs(self.frame_button_refs.MicroButtons) do
-		button:SetAlpha(1)
-	end
+	self:SetMicroMenuAlpha(1)
 end
 
 --- Hide all micro menu buttons
@@ -662,8 +661,12 @@ function addon:HandleGameMenuShow()
 	-- When the Game Menu is shown, Blizzard reduces the micro buttons' alpha to 0.5
 	-- The two exceptions are the Store and Main Menu buttons, which are set to alpha 1
 	if addon.enabled and addon.db.MicroButtons then
+		addon:CancelTimer("MicroButtons")
 		_G.StoreMicroButton:SetAlpha(1)
 		_G.MainMenuMicroButton:SetAlpha(1)
+		for _, texture in ipairs(addon.micro_menu_art) do
+			texture:SetAlpha(1)
+		end
 	end
 end
 

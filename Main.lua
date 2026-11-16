@@ -96,6 +96,9 @@ addon.frame_buttons = {
 		"CharacterMicroButton",
 		"ProfessionMicroButton",
 		"PlayerSpellsMicroButton",
+		"SpellbookMicroButton", -- Forever
+		"TalentMicroButton", -- Forever
+		"LegacyMicroButton", -- Forever
 		"AchievementMicroButton",
 		"QuestLogMicroButton",
 		"HousingMicroButton",
@@ -103,6 +106,7 @@ addon.frame_buttons = {
 		"LFDMicroButton", -- Looking for Group
 		"EJMicroButton", -- Adventure Guide
 		"CollectionsMicroButton",
+		"HelpMicroButton", -- Forever
 		"StoreMicroButton",
 		"MainMenuMicroButton",
 		"QuickJoinToastButton", -- Friends list / Quick Join button (lower left)
@@ -113,6 +117,8 @@ addon.frame_buttons = {
 --- Reference map for all containers and buttons
 addon.containers = {}
 addon.frame_button_refs = {}
+--- Micro menu background textures, only present in Forever
+addon.micro_menu_art = {}
 --- Reference map for aura frames (BuffFrame, DebuffFrame)
 addon.aura_frames = {}
 --- Reference map for aura buttons (the individual aura icons)
@@ -259,6 +265,14 @@ function addon:OnInit()
 			local button = _G[buttonName]
 			if button then table.insert(self.frame_button_refs[containerName], button) end
 		end
+	end
+
+	-- BorderArt and BackgroundArt only exist in Forever
+	---@type table?
+	local microMenu = _G["MicroMenu"]
+	if microMenu then
+		table.insert(self.micro_menu_art, microMenu.BorderArt)
+		table.insert(self.micro_menu_art, microMenu.BackgroundArt)
 	end
 
 	-- populate aura frame references

@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - The totem bar in Forever can now be hidden until you mouse over it
 - New "Totem Timers" option to hide the active totem timers below your character portrait until you mouse over them
 
+### Fixed
+- The menu bar in Forever now hides completely, including its background and the Spellbook, Talents, Legacy and Help buttons
+- The menu bar no longer disappears when you mouse over it while the game menu is open
+- Greyed-out menu buttons, such as features your character hasn't unlocked yet, no longer stay visible when the menu bar should be hidden
+
 ## [4.6.0] 2026-11-16
 ### Added
 - New "Show in Combat" option that keeps all action bars visible while you are in combat
