@@ -35,6 +35,9 @@ local PET_BAR = "PetActionBar"
 addon.PET_BAR = PET_BAR
 local PET_ACTION_BUTTON = "PetActionButton"
 addon.PET_ACTION_BUTTON = PET_ACTION_BUTTON
+-- Shaman totem bar, only present in Forever
+local TOTEM_BAR = "MultiCastActionBarFrame"
+addon.TOTEM_BAR = TOTEM_BAR
 
 -- Addon Tables
 -----------------------------------------------------------
@@ -225,6 +228,25 @@ function addon:OnInit()
 		table.insert(self.buttons[MAIN_BAR], _G["MainMenuBarVehicleLeaveButton"])
 	end
 
+	local totemBar = _G[TOTEM_BAR]
+	if totemBar then
+		table.insert(self.bar_names, TOTEM_BAR)
+		self.bars[TOTEM_BAR] = totemBar
+		local buttons = {
+			_G["MultiCastSummonSpellButton"],
+			_G["MultiCastRecallSpellButton"],
+			_G["MultiCastFlyoutFrameOpenButton"],
+			_G["MultiCastFlyoutFrameCloseButton"],
+		}
+		for i = 1, 4 do
+			table.insert(buttons, _G["MultiCastSlotButton" .. i])
+		end
+		for i = 1, 12 do
+			table.insert(buttons, _G["MultiCastActionButton" .. i])
+		end
+		self.buttons[TOTEM_BAR] = buttons
+	end
+
 	-- populate frame container references
 	for _, containerName in ipairs(self.frame_containers) do
 		self.containers[containerName] = _G[containerName]
@@ -242,6 +264,7 @@ function addon:OnInit()
 	-- populate aura frame references
 	self.aura_frames["BuffFrame"] = _G["BuffFrame"]
 	self.aura_frames["DebuffFrame"] = _G["DebuffFrame"]
+	self.aura_frames["TotemFrame"] = _G["TotemFrame"]
 	-- aura buttons are created by Blizzard in AuraFrame_OnLoad
 	if self.aura_frames["BuffFrame"] and self.aura_frames["BuffFrame"].auraFrames then
 		self.aura_buttons["BuffFrame"] = self.aura_frames["BuffFrame"].auraFrames
@@ -301,8 +324,13 @@ function addon:OnEnable()
 	end)
 
 	-- Flyouts are more complicated, but we wanna show the parent bar while they're open
-	SpellFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow() end)
+	SpellFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow(addon:GetFlyoutParent()) end)
 	SpellFlyout:HookScript("OnHide", function() addon:HandleFlyoutHide() end)
+	local totemFlyout = _G["MultiCastFlyoutFrame"]
+	if totemFlyout then
+		totemFlyout:HookScript("OnShow", function() addon:HandleFlyoutShow(TOTEM_BAR) end)
+		totemFlyout:HookScript("OnHide", function() addon:HandleFlyoutHide() end)
+	end
 
 	-- Game options menu affects micro button alpha - restore our settings when it closes
 	GameMenuFrame:HookScript("OnShow", function() addon:HandleGameMenuShow() end)
@@ -314,4 +342,5 @@ function addon:OnEnable()
 	addon:HookFrameContainers()
 	addon:HookAuraFrame("BuffFrame")
 	addon:HookAuraFrame("DebuffFrame")
+	addon:HookTotemFrame()
 end

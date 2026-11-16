@@ -381,12 +381,12 @@ function addon:Vehicle(event, ...)
 	end
 end
 
-function addon:HandleFlyoutShow()
+--- Keep a bar visible while one of its flyouts is open
+---@param bar_name string|nil nil when the flyout doesn't belong to one of our bars, e.g. from the spellbook
+function addon:HandleFlyoutShow(bar_name)
 	-- ignore when bypass enabled
 	if not self.enabled then return end
-	-- this returns nil if the parent isn't one of the bars we're hiding
-	self.bypass = self:GetFlyoutParent()
-	-- this happens when opening a flyout from the spellbook
+	self.bypass = bar_name
 	if self.bypass == nil then return end
 	self:CancelTimer(self.bypass)
 	self.bars[self.bypass]:SetAlpha(1)
@@ -787,6 +787,25 @@ function addon:HookAuraFrame(frame_name)
 	end
 	-- Also hook ConsolidatedBuffs on BuffFrame
 	if frame and frame.ConsolidatedBuffs then self:SecureHookAuraButton(frame.ConsolidatedBuffs, frame_name) end
+end
+
+--- Hook totem timer buttons, which TotemFrame acquires from a pool as totems appear
+function addon:HookTotemFrame()
+	---@type table?
+	local frame = self.aura_frames["TotemFrame"]
+	if not frame then return end
+	self:ApplyOnAuraFrame("TotemFrame")
+	local hooked = {}
+	local function HookActiveButtons()
+		for button in frame.totemPool:EnumerateActive() do
+			if not hooked[button] then
+				hooked[button] = true
+				addon:SecureHookAuraButton(button, "TotemFrame")
+			end
+		end
+	end
+	HookActiveButtons()
+	hooksecurefunc(frame, "Update", HookActiveButtons)
 end
 
 --- Show all aura frames

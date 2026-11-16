@@ -32,10 +32,12 @@ addon.db = {
 	MultiBar7 = true,
 	StanceBar = true,
 	PetActionBar = true,
+	MultiCastActionBarFrame = true,
 	BagsBar = true,
 	MicroButtons = true,
 	BuffFrame = false,
 	DebuffFrame = false,
+	TotemFrame = false,
 	LinkActionBars = false,
 	Skyriding = true,
 	Combat = false,
@@ -339,6 +341,19 @@ addon.settings = {
 				end
 			end,
 		},
+		{
+			name = L["Totem Timers"],
+			tooltip = L["Toggle mouseover for the active totem timers below the player frame"],
+			variable = addon.shortName .. "_TotemFrame",
+			variableKey = "TotemFrame",
+			type = Settings.VarType.Boolean,
+			defaultValue = Settings.Default.False,
+			GetValue = function() return addon.db.TotemFrame end,
+			SetValue = function(value)
+				addon.db.TotemFrame = value
+				addon:ApplyOnAuraFrame("TotemFrame")
+			end,
+		},
 	},
 	fadeSliders = {
 		{
@@ -417,6 +432,22 @@ addon.settings = {
 		},
 	},
 }
+
+if _G[addon.TOTEM_BAR] then
+	table.insert(addon.settings.actionBarsProxy, {
+		name = L["Totem Bar"],
+		tooltip = L["Toggle mouseover for the totem bar"],
+		variable = addon.shortName .. "_TotemBar",
+		variableKey = addon.TOTEM_BAR,
+		type = Settings.VarType.Boolean,
+		defaultValue = Settings.Default.True,
+		GetValue = function() return addon.db[addon.TOTEM_BAR] end,
+		SetValue = function(value)
+			addon.db[addon.TOTEM_BAR] = value
+			addon:ApplyOnBar(addon.bars[addon.TOTEM_BAR], addon.TOTEM_BAR)
+		end,
+	})
+end
 
 -- Addon API
 -----------------------------------------------------------
