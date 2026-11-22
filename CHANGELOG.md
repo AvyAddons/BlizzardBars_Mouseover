@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file. Be aware th
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [4.7.0] 2026-11-22
 ### Added
 - The totem bar in Forever can now be hidden until you mouse over it
 - New "Totem Timers" option to hide the active totem timers below your character portrait until you mouse over them
